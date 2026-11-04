@@ -1,29 +1,29 @@
 <?php
 if (!defined('ABSPATH')) exit;
 global $wpdb;
-$players = (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . WPBBS_DB::t('players'));
-$today = count(WPBBS_Player::played_today(1000));
-$jackpots = (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . WPBBS_DB::t('jackpots'));
-$ids = get_option('wpbbs_page_ids', []);
-$log = $wpdb->get_results('SELECT * FROM ' . WPBBS_DB::t('admin_log') . ' ORDER BY id DESC LIMIT 15');
+$players = (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . MDBBS_DB::t('players'));
+$today = count(MDBBS_Player::played_today(1000));
+$jackpots = (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . MDBBS_DB::t('jackpots'));
+$ids = get_option('mdbbs_page_ids', []);
+$log = $wpdb->get_results('SELECT * FROM ' . MDBBS_DB::t('admin_log') . ' ORDER BY id DESC LIMIT 15');
 $locations = get_registered_nav_menus();
 ?>
-<div class="wpbbs-cards">
-    <div class="wpbbs-card">Players<strong><?php echo esc_html(WPBBS_Game::fmt($players)); ?></strong></div>
-    <div class="wpbbs-card">Played today<strong><?php echo esc_html(WPBBS_Game::fmt($today)); ?></strong></div>
-    <div class="wpbbs-card">Progressive jackpot<strong><?php echo esc_html(WPBBS_Game::fmt(WPBBS_Game::jackpot())); ?></strong></div>
-    <div class="wpbbs-card">Jackpots won<strong><?php echo esc_html(WPBBS_Game::fmt($jackpots)); ?></strong></div>
+<div class="mdbbs-cards">
+    <div class="mdbbs-card">Players<strong><?php echo esc_html(MDBBS_Game::fmt($players)); ?></strong></div>
+    <div class="mdbbs-card">Played today<strong><?php echo esc_html(MDBBS_Game::fmt($today)); ?></strong></div>
+    <div class="mdbbs-card">Progressive jackpot<strong><?php echo esc_html(MDBBS_Game::fmt(MDBBS_Game::jackpot())); ?></strong></div>
+    <div class="mdbbs-card">Jackpots won<strong><?php echo esc_html(MDBBS_Game::fmt($jackpots)); ?></strong></div>
 </div>
 
-<?php $wpbbs_issues = WPBBS_Health::issues(); ?>
-<div class="wpbbs-box"<?php echo $wpbbs_issues ? ' style="border-left:4px solid #d63638"' : ''; ?>>
+<?php $mdbbs_issues = MDBBS_Health::issues(); ?>
+<div class="mdbbs-box"<?php echo $mdbbs_issues ? ' style="border-left:4px solid #d63638"' : ''; ?>>
     <h2>Install health</h2>
     <p class="description">How this copy of the plugin was installed, and whether that will cause trouble later.
-        Installed from <code><?php echo esc_html(WPBBS_Health::folder()); ?></code>.</p>
-    <?php if (!$wpbbs_issues) : ?>
+        Installed from <code><?php echo esc_html(MDBBS_Health::folder()); ?></code>.</p>
+    <?php if (!$mdbbs_issues) : ?>
         <p style="color:#008a20"><strong>Nothing to report.</strong> The plugin is in the folder updates expect, there is only
             one copy of it, and no repository metadata is sitting in your web root.</p>
-    <?php else : foreach ($wpbbs_issues as $issue) : ?>
+    <?php else : foreach ($mdbbs_issues as $issue) : ?>
         <h3 style="margin-bottom:4px;color:<?php echo $issue['level'] === 'error' ? '#d63638' : '#996800'; ?>">
             <?php echo esc_html($issue['title']); ?>
         </h3>
@@ -33,12 +33,12 @@ $locations = get_registered_nav_menus();
         <code>README.md</code>, under <em>Building a release zip</em>.</p>
 </div>
 
-<div class="wpbbs-box">
+<div class="mdbbs-box">
     <h2>Game pages</h2>
     <table class="widefat striped">
         <thead><tr><th>Page</th><th>Shortcode</th><th>Status</th></tr></thead>
         <tbody>
-        <?php foreach (WPBBS_UI::PAGES as $key => $def) :
+        <?php foreach (MDBBS_UI::PAGES as $key => $def) :
             $id = !empty($ids[$key]) ? (int) $ids[$key] : 0;
             if (!$id) {
                 $found = get_page_by_path($def[1]);
@@ -57,11 +57,11 @@ $locations = get_registered_nav_menus();
         <?php endforeach; ?>
         </tbody>
     </table>
-    <?php echo WPBBS_Admin::form_open('setup_pages'); ?>
+    <?php echo MDBBS_Admin::form_open('setup_pages'); ?>
         <p>Creates any missing pages, each holding its shortcode. Pages that already exist with these slugs are kept and renamed
-            to the "WP BBS Slots - ..." titles.</p>
-        <p><label for="wpbbs-menu-location">Add the "<?php echo esc_html(WPBBS_GAME_NAME); ?>" home page to a menu:</label>
-            <select id="wpbbs-menu-location" name="menu_location">
+            to the "Maddog BBS Slots - ..." titles.</p>
+        <p><label for="mdbbs-menu-location">Add the "<?php echo esc_html(MDBBS_GAME_NAME); ?>" home page to a menu:</label>
+            <select id="mdbbs-menu-location" name="menu_location">
                 <option value="">Don't add it to a menu</option>
                 <option value="block_header">Theme header (block themes such as Twenty Twenty-Five)</option>
                 <?php foreach ($locations as $slug => $label) : ?>
@@ -74,14 +74,14 @@ $locations = get_registered_nav_menus();
     </form>
 </div>
 
-<div class="wpbbs-box">
+<div class="mdbbs-box">
     <h2>Widgets</h2>
     <p>Add a <strong>Shortcode</strong> block to a sidebar or footer (Appearance &rarr; Widgets, or the Site Editor on block themes) and paste:</p>
-    <p><code>[wpbs-gazette limit=10 compact=1]</code> the progressive and the top 10 scores<br>
-        <code>[wpbs-hof limit=10 compact=1]</code> the Hall of Fame records and the top 10 scores (<code>[wpb-hof]</code> works too)</p>
+    <p><code>[mdbbs-gazette limit=10 compact=1]</code> the progressive and the top 10 scores<br>
+        <code>[mdbbs-hof limit=10 compact=1]</code> the Hall of Fame records and the top 10 scores (the old <code>[wpbs-...]</code> names from before the rename still work)</p>
 </div>
 
-<div class="wpbbs-box">
+<div class="mdbbs-box">
     <h2>Recent admin activity</h2>
     <?php if (!$log) : ?>
         <p>Nothing yet.</p>

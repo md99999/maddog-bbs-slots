@@ -3,12 +3,12 @@
  * Builds an installable plugin zip with nothing but PHP: no git, no zip command, no
  * dependencies. Handy on Windows, and on hosts where PHP is the only tool you have.
  *
- *   php tools/build-zip.php                        writes ../wp-bbs-slots-<version>.zip
+ *   php tools/build-zip.php                        writes ../maddog-bbs-slots-<version>.zip
  *   php tools/build-zip.php /path/to/output.zip    writes that file instead
  *
  * It packs the working tree, so uncommitted edits are included. That is the difference from
  * `git archive`, which packs the last commit; both produce the same single top-level folder,
- * wp-bbs-slots, which is what Plugins -> Add New -> Upload Plugin expects.
+ * maddog-bbs-slots, which is what Plugins -> Add New -> Upload Plugin expects.
  */
 if (PHP_SAPI !== 'cli') {
     header('HTTP/1.1 403 Forbidden');
@@ -20,7 +20,7 @@ if (!class_exists('ZipArchive')) {
 }
 
 $root = dirname(__DIR__);
-$slug = 'wp-bbs-slots';
+$slug = 'maddog-bbs-slots';
 
 /** Anything that is not part of the plugin: repository metadata, this script, build output. */
 $skip_dirs  = ['.git', '.github', '.idea', '.vscode', 'node_modules', 'vendor', 'tools'];

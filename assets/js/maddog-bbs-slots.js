@@ -1,5 +1,5 @@
 /*
- * WP BBS Slots: spins the reels on the Play page and keeps the progressive jackpot ticking.
+ * Maddog BBS Slots: spins the reels on the Play page and keeps the progressive jackpot ticking.
  *
  * The server decides every result. This script sends the wager, spins all three reels while it
  * waits, stops the first reel after three seconds and the others a second apart, then shows
@@ -8,7 +8,7 @@
 (function () {
   'use strict';
 
-  var cfg = window.WPBBS || {};
+  var cfg = window.MDBBS || {};
   var symbols = cfg.symbols || {};
   var keys = Object.keys(symbols);
   var fmt = function (n) {
@@ -22,15 +22,15 @@
   function symbolNode(key) {
     var s = symbols[key] || { label: key, icon: key };
     var outer = document.createElement('span');
-    outer.className = 'wpbbs-sym wpbbs-sym-' + key;
+    outer.className = 'mdbbs-sym mdbbs-sym-' + key;
     outer.setAttribute('role', 'img');
     outer.setAttribute('aria-label', s.label);
     var icon = document.createElement('span');
-    icon.className = 'wpbbs-sym-icon';
+    icon.className = 'mdbbs-sym-icon';
     icon.setAttribute('aria-hidden', 'true');
     icon.textContent = s.icon;
     var label = document.createElement('span');
-    label.className = 'wpbbs-sym-label';
+    label.className = 'mdbbs-sym-label';
     label.setAttribute('aria-hidden', 'true');
     label.textContent = s.label;
     outer.appendChild(icon);
@@ -39,15 +39,15 @@
   }
 
   function setAll(name, text) {
-    document.querySelectorAll('[data-wpbbs="' + name + '"]').forEach(function (el) { el.textContent = text; });
+    document.querySelectorAll('[data-mdbbs="' + name + '"]').forEach(function (el) { el.textContent = text; });
   }
 
   /** Refreshes the progressive on any page that shows it. */
   function startTicker() {
-    if (!cfg.ajaxUrl || !document.querySelector('[data-wpbbs="jackpot"]')) return;
+    if (!cfg.ajaxUrl || !document.querySelector('[data-mdbbs="jackpot"]')) return;
     setInterval(function () {
-      if (document.hidden || document.querySelector('.wpbbs-machine.wpbbs-busy')) return;
-      fetch(cfg.ajaxUrl + '?action=wpbbs_jackpot', { credentials: 'same-origin' })
+      if (document.hidden || document.querySelector('.mdbbs-machine.mdbbs-busy')) return;
+      fetch(cfg.ajaxUrl + '?action=mdbbs_jackpot', { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (res) { if (res && res.success) setAll('jackpot', fmt(res.data.jackpot)); })
         .catch(function () {});
@@ -56,12 +56,12 @@
 
   function Machine(root) {
     this.root = root;
-    this.form = root.querySelector('[data-wpbbs="form"]');
-    this.bet = root.querySelector('[data-wpbbs="bet"]');
-    this.pull = root.querySelector('[data-wpbbs="pull"]');
-    this.status = root.querySelector('[data-wpbbs="status"]');
-    this.extra = root.querySelector('[data-wpbbs="extra"]');
-    this.reels = Array.prototype.slice.call(root.querySelectorAll('[data-wpbbs-reel]'));
+    this.form = root.querySelector('[data-mdbbs="form"]');
+    this.bet = root.querySelector('[data-mdbbs="bet"]');
+    this.pull = root.querySelector('[data-mdbbs="pull"]');
+    this.status = root.querySelector('[data-mdbbs="status"]');
+    this.extra = root.querySelector('[data-mdbbs="extra"]');
+    this.reels = Array.prototype.slice.call(root.querySelectorAll('[data-mdbbs-reel]'));
     this.timers = [];
     this.busy = false;
     var self = this;
@@ -86,8 +86,8 @@
 
   Machine.prototype.startReel = function (i) {
     var reel = this.reels[i];
-    reel.classList.add('wpbbs-spinning');
-    reel.classList.remove('wpbbs-win');
+    reel.classList.add('mdbbs-spinning');
+    reel.classList.remove('mdbbs-win');
     this.timers[i] = setInterval(function () {
       reel.replaceChildren(symbolNode(keys[Math.floor(Math.random() * keys.length)]));
     }, 70);
@@ -96,15 +96,15 @@
   Machine.prototype.stopReel = function (i, key) {
     clearInterval(this.timers[i]);
     var reel = this.reels[i];
-    reel.classList.remove('wpbbs-spinning');
+    reel.classList.remove('mdbbs-spinning');
     if (key) reel.replaceChildren(symbolNode(key));
-    reel.classList.add('wpbbs-stopped');
-    setTimeout(function () { reel.classList.remove('wpbbs-stopped'); }, 300);
+    reel.classList.add('mdbbs-stopped');
+    setTimeout(function () { reel.classList.remove('mdbbs-stopped'); }, 300);
   };
 
   Machine.prototype.setBusy = function (busy) {
     this.busy = busy;
-    this.root.classList.toggle('wpbbs-busy', busy);
+    this.root.classList.toggle('mdbbs-busy', busy);
     this.pull.disabled = busy;
     this.bet.disabled = busy;
   };
@@ -150,13 +150,13 @@
     var bet = this.bet.value;
     var started = Date.now();
     this.setBusy(true);
-    this.status.className = 'wpbbs-result';
+    this.status.className = 'mdbbs-result';
     this.status.textContent = 'Spinning...';
     this.showExtra([]);
     for (var i = 0; i < this.reels.length; i++) this.startReel(i);
 
     var body = new FormData();
-    body.append('action', 'wpbbs_spin');
+    body.append('action', 'mdbbs_spin');
     body.append('nonce', cfg.nonce || '');
     body.append('bet', bet);
 
@@ -166,7 +166,7 @@
         if (!res || !res.success) {
           var err = (res && res.data) || {};
           for (var j = 0; j < self.reels.length; j++) self.stopReel(j, null);
-          self.status.className = 'wpbbs-result wpbbs-result-error';
+          self.status.className = 'mdbbs-result mdbbs-result-error';
           self.status.textContent = err.message || 'That spin did not go through. Please try again.';
           self.showExtra(self.update(err));
           return;
@@ -178,8 +178,8 @@
           .then(function () { self.stopReel(1, d.reels[1]); return wait(1000); })
           .then(function () {
             self.stopReel(2, d.reels[2]);
-            if (d.win > 0) self.reels.forEach(function (r) { r.classList.add('wpbbs-win'); });
-            self.status.className = 'wpbbs-result ' + (d.kind === 'jackpot' ? 'wpbbs-result-jackpot' : (d.win > 0 ? 'wpbbs-result-win' : (d.kind === 'free' ? 'wpbbs-result-free' : '')));
+            if (d.win > 0) self.reels.forEach(function (r) { r.classList.add('mdbbs-win'); });
+            self.status.className = 'mdbbs-result ' + (d.kind === 'jackpot' ? 'mdbbs-result-jackpot' : (d.win > 0 ? 'mdbbs-result-win' : (d.kind === 'free' ? 'mdbbs-result-free' : '')));
             self.status.textContent = d.message;
             var lines = (d.news || []).slice();
             if (d.bailout) lines.push(d.bailout);
@@ -188,7 +188,7 @@
       })
       .catch(function () {
         for (var k = 0; k < self.reels.length; k++) self.stopReel(k, null);
-        self.status.className = 'wpbbs-result wpbbs-result-error';
+        self.status.className = 'mdbbs-result mdbbs-result-error';
         self.status.textContent = 'The machine could not be reached. Check your connection and try again.';
         self.canSpin = true;
       })
@@ -200,8 +200,8 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
-    var root = document.querySelector('[data-wpbbs-machine]');
-    if (root && cfg.nonce && root.querySelector('[data-wpbbs="form"]')) new Machine(root);
+    var root = document.querySelector('[data-mdbbs-machine]');
+    if (root && cfg.nonce && root.querySelector('[data-mdbbs="form"]')) new Machine(root);
     startTicker();
   });
 })();

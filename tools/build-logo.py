@@ -1,11 +1,13 @@
-"""Draws the WP BBS Slots logo, a 400x400 ANSI-art style SVG made only of square 'pixels',
+"""Draws the Maddog BBS Slots logo, a 400x400 ANSI-art style SVG made only of square 'pixels',
 so it looks the same in every browser with no fonts involved.
 
-    python tools/build-logo.py assets/img/wp-bbs-slots-logo.svg
+    python tools/build-logo.py assets/img/maddog-bbs-slots-logo.svg
 """
 import sys
 
 FONT = {  # 5x7 bitmaps
+    'M': ["10001", "11011", "10101", "10101", "10001", "10001", "10001"],
+    'G': ["01111", "10000", "10000", "10011", "10001", "10001", "01111"],
     'W': ["10001", "10001", "10001", "10101", "10101", "11011", "10001"],
     'P': ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
     'B': ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
@@ -75,9 +77,10 @@ for k, (i, j) in enumerate(ring):
         px(x + 3, y + 3, 4, 4, DGRAY)
 
 # Title, two lines, with ANSI colour bands and a dark drop shadow.
-s1, s2, sc = 'WP BBS', 'SLOTS!', 9
-text(s1, (W - width(s1, sc)) // 2, 36, sc, [CYAN, CYAN, BLUE, BLUE, MAG, MAG, MAG], shadow=DBLUE)
-text(s2, (W - width(s2, sc)) // 2, 112, sc, [YELLOW, YELLOW, YELLOW, RED, RED, RED, MAG], shadow=DMAG)
+s1, sc1 = 'MADDOG', 9
+s2, sc2 = 'BBS SLOTS!', 6
+text(s1, (W - width(s1, sc1)) // 2, 36, sc1, [CYAN, CYAN, BLUE, BLUE, MAG, MAG, MAG], shadow=DBLUE)
+text(s2, (W - width(s2, sc2)) // 2, 124, sc2, [YELLOW, YELLOW, YELLOW, RED, RED, RED, MAG], shadow=DMAG)
 
 # A shaded divider bar under the title: light to solid to light, in ANSI shade-block style.
 y = 190
@@ -110,6 +113,6 @@ text(tag, (W - width(tag, sct)) // 2, 349, sct, [GREEN, GREEN, GREEN, GREEN, CYA
 
 svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{W}" viewBox="0 0 {W} {W}" '
        f'shape-rendering="crispEdges" role="img" aria-labelledby="t">'
-       f'<title id="t">WP BBS Slots!</title>' + ''.join(rects) + '</svg>\n')
+       f'<title id="t">Maddog BBS Slots!</title>' + ''.join(rects) + '</svg>\n')
 open(sys.argv[1], 'w', encoding='utf-8', newline='\n').write(svg)
 print(len(rects), 'rects,', len(svg), 'bytes')

@@ -6,14 +6,14 @@ if (!defined('ABSPATH')) exit;
  * once-a-day bailout. Everything is decided here on the server; the browser only animates
  * the result it is sent.
  */
-class WPBBS_Slots {
+class MDBBS_Slots {
 
-    /** One reel stop, weighted by WPBBS_Game::SYMBOLS. */
+    /** One reel stop, weighted by MDBBS_Game::SYMBOLS. */
     public static function roll() {
         $total = 0;
-        foreach (WPBBS_Game::SYMBOLS as $s) $total += $s['weight'];
+        foreach (MDBBS_Game::SYMBOLS as $s) $total += $s['weight'];
         $pick = random_int(1, $total);
-        foreach (WPBBS_Game::SYMBOLS as $key => $s) {
+        foreach (MDBBS_Game::SYMBOLS as $key => $s) {
             $pick -= $s['weight'];
             if ($pick <= 0) return $key;
         }
@@ -26,13 +26,13 @@ class WPBBS_Slots {
      */
     public static function evaluate(array $reels) {
         list($a, $b, $c) = $reels;
-        $sym = WPBBS_Game::SYMBOLS;
+        $sym = MDBBS_Game::SYMBOLS;
         if ($a === $b && $b === $c) {
             if ($a === 'jackpot') return ['kind' => 'jackpot', 'multiple' => 0, 'label' => 'Jackpot Jackpot Jackpot'];
             return ['kind' => 'triple', 'multiple' => (int) $sym[$a]['pays'], 'label' => 'Three ' . self::plural($a)];
         }
         if ($a === $b) {
-            return ['kind' => 'pair', 'multiple' => WPBBS_Game::PAIR_PAYS, 'label' => 'A pair of ' . self::plural($a)];
+            return ['kind' => 'pair', 'multiple' => MDBBS_Game::PAIR_PAYS, 'label' => 'A pair of ' . self::plural($a)];
         }
         if (in_array('cherry', $reels, true)) {
             return ['kind' => 'free', 'multiple' => 0, 'label' => 'A Cherry'];
@@ -43,7 +43,7 @@ class WPBBS_Slots {
     private static function plural($key) {
         if ($key === 'cherry') return 'Cherries';
         if ($key === 'seven') return 'Sevens';
-        return WPBBS_Game::SYMBOLS[$key]['label'] . 's';
+        return MDBBS_Game::SYMBOLS[$key]['label'] . 's';
     }
 
     /**
@@ -52,30 +52,30 @@ class WPBBS_Slots {
      */
     public static function spin($p, $bet) {
         global $wpdb;
-        $t = WPBBS_DB::t('players');
+        $t = MDBBS_DB::t('players');
         $bet = (int) $bet;
-        if (!in_array($bet, WPBBS_Game::BETS, true)) throw new WPBBS_Exception('Choose a wager from the list.');
+        if (!in_array($bet, MDBBS_Game::BETS, true)) throw new MDBBS_Exception('Choose a wager from the list.');
 
-        $p = WPBBS_Player::fresh($p->id);
-        if (!$p) throw new WPBBS_Exception('Player not found.');
-        if ((int) $p->spins_left <= 0) throw new WPBBS_Exception('You have no spins left today. Your spins come back tomorrow.', 'warning');
-        if ((int) $p->bankroll < WPBBS_Game::min_bet()) throw new WPBBS_Exception('You are out of credits until tomorrow\'s top-up.', 'warning');
-        if ((int) $p->bankroll < $bet) throw new WPBBS_Exception('Your bankroll does not cover that wager. Choose a smaller one.', 'warning');
+        $p = MDBBS_Player::fresh($p->id);
+        if (!$p) throw new MDBBS_Exception('Player not found.');
+        if ((int) $p->spins_left <= 0) throw new MDBBS_Exception('You have no spins left today. Your spins come back tomorrow.', 'warning');
+        if ((int) $p->bankroll < MDBBS_Game::min_bet()) throw new MDBBS_Exception('You are out of credits until tomorrow\'s top-up.', 'warning');
+        if ((int) $p->bankroll < $bet) throw new MDBBS_Exception('Your bankroll does not cover that wager. Choose a smaller one.', 'warning');
 
         // Take the wager and the spin in one guarded statement, so a double click cannot spend either twice.
         $took = $wpdb->query($wpdb->prepare(
             "UPDATE $t SET bankroll = bankroll - %d, spins_left = spins_left - 1 WHERE id = %d AND bankroll >= %d AND spins_left > 0",
             $bet, $p->id, $bet
         ));
-        if (!$took) throw new WPBBS_Exception('That spin did not go through. Please try again.');
+        if (!$took) throw new MDBBS_Exception('That spin did not go through. Please try again.');
 
         // The first spin of the day goes in the Gazette, with what the player sat down with.
         self::announce_start($p);
 
         // Every spin feeds the progressive.
         $wpdb->query($wpdb->prepare(
-            'UPDATE ' . WPBBS_DB::t('state') . ' SET state_value = state_value + %d, updated_at = %s WHERE state_key = %s',
-            WPBBS_Settings::get('jackpot_increment'), current_time('mysql'), 'jackpot'
+            'UPDATE ' . MDBBS_DB::t('state') . ' SET state_value = state_value + %d, updated_at = %s WHERE state_key = %s',
+            MDBBS_Settings::get('jackpot_increment'), current_time('mysql'), 'jackpot'
         ));
 
         $reels = [self::roll(), self::roll(), self::roll()];
@@ -96,24 +96,24 @@ class WPBBS_Slots {
                 current_streak = IF(%d = 1, current_streak + 1, 0), best_streak = GREATEST(best_streak, current_streak),
                 jackpots_won = jackpots_won + %d, peak_bankroll = GREATEST(peak_bankroll, bankroll), last_played = %s
              WHERE id = %d",
-            $win, WPBBS_Game::MAX_SCORE, $bonus, $bet, $win, $won ? 1 : 0, $win, $win, $won ? 1 : 0,
+            $win, MDBBS_Game::MAX_SCORE, $bonus, $bet, $win, $won ? 1 : 0, $win, $win, $won ? 1 : 0,
             $result['kind'] === 'jackpot' ? 1 : 0, $now, $p->id
         ));
         if ($settled === false) {
             // Never leave a player charged for a spin that was not paid out: hand back the wager and the spin.
             $wpdb->query($wpdb->prepare("UPDATE $t SET bankroll = LEAST(bankroll + %d, %d), spins_left = spins_left + 1 WHERE id = %d",
-                $bet, WPBBS_Game::MAX_SCORE, $p->id));
-            WPBBS_Log::admin('error', sprintf('Spin for player #%d could not be saved: %s', $p->id, $wpdb->last_error));
-            throw new WPBBS_Exception('That spin could not be saved, so your wager and spin have been returned. Please try again.');
+                $bet, MDBBS_Game::MAX_SCORE, $p->id));
+            MDBBS_Log::admin('error', sprintf('Spin for player #%d could not be saved: %s', $p->id, $wpdb->last_error));
+            throw new MDBBS_Exception('That spin could not be saved, so your wager and spin have been returned. Please try again.');
         }
 
-        $p = WPBBS_Player::fresh($p->id);
+        $p = MDBBS_Player::fresh($p->id);
         $news = self::record_spin($p, $reels, $result, $bet, $win);
 
         if ($won) {
-            $message = sprintf('%s! You won %s credits.', $result['label'], WPBBS_Game::fmt($win));
+            $message = sprintf('%s! You won %s credits.', $result['label'], MDBBS_Game::fmt($win));
             if ($result['kind'] === 'jackpot') {
-                $message = sprintf('JACKPOT! You won the progressive jackpot of %s credits!', WPBBS_Game::fmt($win));
+                $message = sprintf('JACKPOT! You won the progressive jackpot of %s credits!', MDBBS_Game::fmt($win));
             }
             $message .= ' Bonus Spin awarded.';
         } elseif ($result['kind'] === 'free') {
@@ -123,7 +123,7 @@ class WPBBS_Slots {
         }
 
         $bailout = self::maybe_bailout($p);
-        if ($bailout) $p = WPBBS_Player::fresh($p->id);
+        if ($bailout) $p = MDBBS_Player::fresh($p->id);
 
         // The last spin of the day (or running out of credits with no bailout left) goes in the Gazette.
         self::announce_finish($p);
@@ -139,9 +139,9 @@ class WPBBS_Slots {
             'news'       => $news,
             'bankroll'   => (int) $p->bankroll,
             'spins_left' => (int) $p->spins_left,
-            'jackpot'    => WPBBS_Game::jackpot(),
-            'next_bet'   => WPBBS_Player::default_bet($p),
-            'rank'       => WPBBS_Game::player_rank($p),
+            'jackpot'    => MDBBS_Game::jackpot(),
+            'next_bet'   => MDBBS_Player::default_bet($p),
+            'rank'       => MDBBS_Game::player_rank($p),
         ];
     }
 
@@ -151,11 +151,11 @@ class WPBBS_Slots {
      */
     private static function claim_jackpot() {
         global $wpdb;
-        $seed = WPBBS_Settings::get('jackpot_seed');
+        $seed = MDBBS_Settings::get('jackpot_seed');
         for ($i = 0; $i < 10; $i++) {
-            $amount = WPBBS_Game::jackpot();
+            $amount = MDBBS_Game::jackpot();
             $done = $wpdb->query($wpdb->prepare(
-                'UPDATE ' . WPBBS_DB::t('state') . ' SET state_value = %d, updated_at = %s WHERE state_key = %s AND state_value = %d',
+                'UPDATE ' . MDBBS_DB::t('state') . ' SET state_value = %d, updated_at = %s WHERE state_key = %s AND state_value = %d',
                 $seed, current_time('mysql'), 'jackpot', $amount
             ));
             if ($done) return $amount;
@@ -170,18 +170,18 @@ class WPBBS_Slots {
      */
     public static function maybe_bailout($p) {
         global $wpdb;
-        $threshold = WPBBS_Settings::get('bailout_threshold');
-        $amount = WPBBS_Settings::get('bailout_amount');
-        $today = WPBBS_Game::today();
+        $threshold = MDBBS_Settings::get('bailout_threshold');
+        $amount = MDBBS_Settings::get('bailout_amount');
+        $today = MDBBS_Game::today();
         if ($amount <= 0 || (int) $p->spins_left <= 0 || (int) $p->bankroll >= $threshold || $p->bailout_date === $today) return '';
         $done = $wpdb->query($wpdb->prepare(
-            'UPDATE ' . WPBBS_DB::t('players') . ' SET bankroll = bankroll + %d, bailout_date = %s
+            'UPDATE ' . MDBBS_DB::t('players') . ' SET bankroll = bankroll + %d, bailout_date = %s
              WHERE id = %d AND bankroll < %d AND spins_left > 0 AND (bailout_date IS NULL OR bailout_date <> %s)',
             $amount, $today, $p->id, $threshold, $today
         ));
         if (!$done) return '';
-        WPBBS_Log::news('bailout', sprintf('%s ran low and took the daily bailout of %s credits.', $p->player_name, WPBBS_Game::fmt($amount)), $p->id);
-        return sprintf('Your bankroll ran low, so the house has given you today\'s one-time bailout of %s credits to finish your spins. There is only one bailout a day.', WPBBS_Game::fmt($amount));
+        MDBBS_Log::news('bailout', sprintf('%s ran low and took the daily bailout of %s credits.', $p->player_name, MDBBS_Game::fmt($amount)), $p->id);
+        return sprintf('Your bankroll ran low, so the house has given you today\'s one-time bailout of %s credits to finish your spins. There is only one bailout a day.', MDBBS_Game::fmt($amount));
     }
 
     /**
@@ -191,18 +191,18 @@ class WPBBS_Slots {
      */
     private static function announce_start($p) {
         global $wpdb;
-        $today = WPBBS_Game::today();
+        $today = MDBBS_Game::today();
         // today_spins only moves once a spin is settled, so it is still 0 here on the day's first spin.
         if ($p->started_date === $today || (int) $p->today_spins !== 0) return;
         $done = $wpdb->query($wpdb->prepare(
-            'UPDATE ' . WPBBS_DB::t('players') . ' SET started_date = %s
+            'UPDATE ' . MDBBS_DB::t('players') . ' SET started_date = %s
              WHERE id = %d AND today_spins = 0 AND (started_date IS NULL OR started_date <> %s)',
             $today, $p->id, $today
         ));
         if (!$done) return;
         $spins = (int) $p->spins_left;
-        WPBBS_Log::news('day_start', sprintf('%s pulled up a stool at the machine with %s credits and %d %s to play.',
-            $p->player_name, WPBBS_Game::fmt($p->bankroll), $spins, $spins === 1 ? 'spin' : 'spins'), $p->id);
+        MDBBS_Log::news('day_start', sprintf('%s pulled up a stool at the machine with %s credits and %d %s to play.',
+            $p->player_name, MDBBS_Game::fmt($p->bankroll), $spins, $spins === 1 ? 'spin' : 'spins'), $p->id);
     }
 
     /**
@@ -212,61 +212,61 @@ class WPBBS_Slots {
      */
     private static function announce_finish($p) {
         global $wpdb;
-        $today = WPBBS_Game::today();
+        $today = MDBBS_Game::today();
         $spins = (int) $p->spins_left;
-        $min = WPBBS_Game::min_bet();
+        $min = MDBBS_Game::min_bet();
         $broke = $spins > 0 && (int) $p->bankroll < $min;
         if (($spins > 0 && !$broke) || $p->finished_date === $today) return;
         // The guard re-checks the same condition in the database, so only the request that ends the day reports it.
         $done = $wpdb->query($wpdb->prepare(
-            'UPDATE ' . WPBBS_DB::t('players') . ' SET finished_date = %s
+            'UPDATE ' . MDBBS_DB::t('players') . ' SET finished_date = %s
              WHERE id = %d AND (spins_left <= 0 OR bankroll < %d) AND (finished_date IS NULL OR finished_date <> %s)',
             $today, $p->id, $min, $today
         ));
         if (!$done) return;
         $played = (int) $p->today_spins;
-        $summary = sprintf('%s credits won today over %d %s', WPBBS_Game::fmt($p->today_won), $played, $played === 1 ? 'spin' : 'spins');
+        $summary = sprintf('%s credits won today over %d %s', MDBBS_Game::fmt($p->today_won), $played, $played === 1 ? 'spin' : 'spins');
         if ($broke) {
             $message = sprintf('%s ran dry with %d %s unplayed and stepped away from the machine with a score of %s credits (%s).',
-                $p->player_name, $spins, $spins === 1 ? 'spin' : 'spins', WPBBS_Game::fmt($p->bankroll), $summary);
+                $p->player_name, $spins, $spins === 1 ? 'spin' : 'spins', MDBBS_Game::fmt($p->bankroll), $summary);
         } else {
             $message = sprintf('%s played the last spin of the day and stepped away from the machine with a score of %s credits (%s).',
-                $p->player_name, WPBBS_Game::fmt($p->bankroll), $summary);
+                $p->player_name, MDBBS_Game::fmt($p->bankroll), $summary);
         }
-        WPBBS_Log::news('day_end', $message, $p->id);
+        MDBBS_Log::news('day_end', $message, $p->id);
     }
 
     /** Hall of Fame and Gazette bookkeeping after a spin. Returns lines worth showing the player. */
     private static function record_spin($p, array $reels, array $result, $bet, $win) {
         global $wpdb;
         $lines = [];
-        $big = WPBBS_Settings::get('big_win_news');
+        $big = MDBBS_Settings::get('big_win_news');
         $name = $p->player_name;
 
         if ($result['kind'] === 'jackpot') {
-            $wpdb->insert(WPBBS_DB::t('jackpots'), [
+            $wpdb->insert(MDBBS_DB::t('jackpots'), [
                 'player_id' => $p->id, 'player_name' => $name, 'amount' => $win, 'bet' => $bet, 'won_at' => current_time('mysql'),
             ]);
-            WPBBS_Log::news('jackpot', sprintf('JACKPOT! %s lined up three Jackpots and won the progressive: %s credits! The progressive resets to %s.',
-                $name, WPBBS_Game::fmt($win), WPBBS_Game::fmt(WPBBS_Settings::get('jackpot_seed'))), $p->id);
+            MDBBS_Log::news('jackpot', sprintf('JACKPOT! %s lined up three Jackpots and won the progressive: %s credits! The progressive resets to %s.',
+                $name, MDBBS_Game::fmt($win), MDBBS_Game::fmt(MDBBS_Settings::get('jackpot_seed'))), $p->id);
         } elseif ($big > 0 && $win >= $big) {
-            WPBBS_Log::news('big_win', sprintf('%s hit %s on a %s wager for %s credits.', $name, $result['label'], WPBBS_Game::fmt($bet), WPBBS_Game::fmt($win)), $p->id);
+            MDBBS_Log::news('big_win', sprintf('%s hit %s on a %s wager for %s credits.', $name, $result['label'], MDBBS_Game::fmt($bet), MDBBS_Game::fmt($win)), $p->id);
         }
 
         if ($win > 0) {
-            $detail = $result['label'] . ' on a ' . WPBBS_Game::fmt($bet) . ' wager';
-            if (WPBBS_Records::claim(WPBBS_Records::BIGGEST_SPIN, $p, $win, $detail)) {
+            $detail = $result['label'] . ' on a ' . MDBBS_Game::fmt($bet) . ' wager';
+            if (MDBBS_Records::claim(MDBBS_Records::BIGGEST_SPIN, $p, $win, $detail)) {
                 $lines[] = 'New Hall of Fame record: the highest single spin win!';
-                if ($big > 0 && $win >= $big) WPBBS_Log::news('record', sprintf('%s set a new Hall of Fame record for the highest single spin win: %s credits.', $name, WPBBS_Game::fmt($win)), $p->id);
+                if ($big > 0 && $win >= $big) MDBBS_Log::news('record', sprintf('%s set a new Hall of Fame record for the highest single spin win: %s credits.', $name, MDBBS_Game::fmt($win)), $p->id);
             }
             $streak = (int) $p->current_streak;
-            if ($streak >= 2 && WPBBS_Records::claim(WPBBS_Records::LONGEST_STREAK, $p, $streak, $streak . ' wins in a row')) {
+            if ($streak >= 2 && MDBBS_Records::claim(MDBBS_Records::LONGEST_STREAK, $p, $streak, $streak . ' wins in a row')) {
                 $lines[] = sprintf('New Hall of Fame record: %d wins in a row!', $streak);
-                if ($streak >= 3) WPBBS_Log::news('record', sprintf('%s won %d spins in a row, a new Hall of Fame record.', $name, $streak), $p->id);
+                if ($streak >= 3) MDBBS_Log::news('record', sprintf('%s won %d spins in a row, a new Hall of Fame record.', $name, $streak), $p->id);
             }
         }
 
-        WPBBS_Records::monthly($p->id, (int) $p->bankroll);
+        MDBBS_Records::monthly($p->id, (int) $p->bankroll);
         return array_merge($lines, self::promote($p));
     }
 
@@ -276,20 +276,20 @@ class WPBBS_Slots {
      */
     private static function promote($p) {
         global $wpdb;
-        $level = WPBBS_Game::rank_for(max((int) $p->peak_bankroll, (int) $p->bankroll), (int) $p->days_played);
+        $level = MDBBS_Game::rank_for(max((int) $p->peak_bankroll, (int) $p->bankroll), (int) $p->days_played);
         if ($level <= (int) $p->rank_level) return [];
         $done = $wpdb->query($wpdb->prepare(
-            'UPDATE ' . WPBBS_DB::t('players') . ' SET rank_level = %d WHERE id = %d AND rank_level < %d', $level, $p->id, $level
+            'UPDATE ' . MDBBS_DB::t('players') . ' SET rank_level = %d WHERE id = %d AND rank_level < %d', $level, $p->id, $level
         ));
         if (!$done) return [];
         $p->rank_level = $level;
-        $title = WPBBS_Game::rank_title($level);
+        $title = MDBBS_Game::rank_title($level);
         $lines = [sprintf('Promotion! You are now a %s, and that rank is yours to keep.', $title)];
-        if (in_array($title, WPBBS_Records::rank_firsts($p, $level), true)) {
+        if (in_array($title, MDBBS_Records::rank_firsts($p, $level), true)) {
             $lines[] = sprintf('You are the first player to reach the rank of %s!', $title);
-            WPBBS_Log::news('rank', sprintf('%s is the first player to reach the rank of %s.', $p->player_name, $title), $p->id);
+            MDBBS_Log::news('rank', sprintf('%s is the first player to reach the rank of %s.', $p->player_name, $title), $p->id);
         } else {
-            WPBBS_Log::news('promotion', sprintf('%s has risen to the rank of %s.', $p->player_name, $title), $p->id);
+            MDBBS_Log::news('promotion', sprintf('%s has risen to the rank of %s.', $p->player_name, $title), $p->id);
         }
         return $lines;
     }

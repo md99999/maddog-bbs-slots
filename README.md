@@ -1,4 +1,4 @@
-# WP BBS Slots
+# Maddog BBS Slots
 
 **A turn-based progressive slot machine game for WordPress.**
 
@@ -7,11 +7,11 @@ over for good, and a shot at a progressive jackpot that grows with every pull of
 somebody lines up three Jackpots. The Gazette reports the day's play and the Hall of Fame keeps the
 records.
 
-WP BBS Slots is played entirely in the web browser through ordinary WordPress pages. Players sign in
+Maddog BBS Slots is played entirely in the web browser through ordinary WordPress pages. Players sign in
 to your WordPress site, choose a player name and play.
 
 > **Credits have no cash value and depict a game score only.** Nothing can be bought, won, sold or
-> redeemed for money or prizes. WP BBS Slots is a score-keeping game, not gambling.
+> redeemed for money or prizes. Maddog BBS Slots is a score-keeping game, not gambling.
 > The home and Play pages say so at the foot: *This game has no monetary value, Players play
 > against other players for high score points to get on the Hall of Fame page.*
 
@@ -19,7 +19,7 @@ to your WordPress site, choose a player name and play.
 
 ## Not affiliated with anyone
 
-WP BBS Slots takes its inspiration from the mechanical progressive slot machines of old and from
+Maddog BBS Slots takes its inspiration from the mechanical progressive slot machines of old and from
 the turn-based "door" games of the BBS era, where you dialled in, played your turns for the day and
 came back tomorrow. It is an **entirely new, independently written game**:
 
@@ -62,7 +62,7 @@ rather than opening a public issue. See [SECURITY.md](SECURITY.md).
 
 ## How to play
 
-1. **Sign in** to the WordPress site and open the **WP BBS Slots** page, which explains the game.
+1. **Sign in** to the WordPress site and open the **Maddog BBS Slots** page, which explains the game.
 2. Go to **Play** and **choose a player name**. It is yours for good; nobody else can take it.
 3. New players start with **10,000 credits**. Your bankroll is your score.
 4. **Choose a wager**: 100, 200, 300, 400, 500, 1,000, 2,000, 3,000, 4,000, 5,000, 6,000, 7,000, 8,000, 9,000 or 10,000 credits. It stays set from spin to spin until you
@@ -130,7 +130,7 @@ never takes it away.
 | BBS Legend | 1,000,000,000 | 365 |
 
 A promotion is announced to the player and in the Gazette, and the Hall of Fame records the first
-player to reach each rank. The ladder is `WPBBS_Game::RANKS` in `includes/class-wpbbs-core.php`.
+player to reach each rank. The ladder is `MDBBS_Game::RANKS` in `includes/class-mdbbs-core.php`.
 
 ### The progressive jackpot
 
@@ -148,7 +148,7 @@ on a few spins.
 
 ### The odds
 
-The reel weights are in `WPBBS_Game::SYMBOLS` in `includes/class-wpbbs-core.php`. Every reel uses
+The reel weights are in `MDBBS_Game::SYMBOLS` in `includes/class-mdbbs-core.php`. Every reel uses
 the same strip. With the shipped weights the machine scores back about 145% of wagers before bonus
 spins and the progressive, about 27% of spins win something, and three Jackpots come up roughly once
 in 29,000 spins. Because wins and Cherries hand spins back, a day's 10 spins make about 30 pulls of
@@ -166,11 +166,11 @@ the handle on average.
 
 ## Installation
 
-1. **Install the plugin.** Copy the `wp-bbs-slots` folder into your site's `wp-content/plugins/`
+1. **Install the plugin.** Copy the `maddog-bbs-slots` folder into your site's `wp-content/plugins/`
    directory, or zip the folder and upload it under **Plugins → Add New → Upload Plugin**.
-2. **Activate it.** Activation creates the game's database tables (`wp_wpbbs_*`), seeds the
+2. **Activate it.** Activation creates the game's database tables (`wp_mdbbs_*`), seeds the
    progressive at 100,000,000 and schedules the daily job.
-3. **Create the game pages.** Go to **WP BBS Slots → Dashboard** and click **Create pages**. Choose
+3. **Create the game pages.** Go to **Maddog BBS Slots → Dashboard** and click **Create pages**. Choose
    whether to add the home page to a menu: *Don't add it* (the default), one of your theme's menu
    locations, or, on block themes such as Twenty Twenty-Five, *Theme header*. Only the home page
    goes in a site menu; players move between the game's pages with its own navigation bar.
@@ -178,7 +178,7 @@ the handle on average.
    enable **Settings → General → Anyone can register** (new-user role *Subscriber*), with an anti-bot
    plugin on the registration form.
 5. **Set up cron** so the daily top-up happens at midnight. See below.
-6. **Optional: tune the game** under **WP BBS Slots → Settings**.
+6. **Optional: tune the game** under **Maddog BBS Slots → Settings**.
 
 ### Installing from the repository
 
@@ -186,8 +186,8 @@ Install from a release zip (or one you build, below) where you can. Two things g
 copy of the repository is uploaded instead:
 
 **The folder name.** WordPress identifies a plugin by its folder. GitHub's **Download ZIP** names
-the folder after the branch (`wp-bbs-slots-main`), so installing a proper zip later adds a *second*
-copy of the plugin rather than updating this one. Rename the folder to `wp-bbs-slots` before you
+the folder after the branch (`maddog-bbs-slots-main`), so installing a proper zip later adds a *second*
+copy of the plugin rather than updating this one. Rename the folder to `maddog-bbs-slots` before you
 activate it, and keep that name.
 
 **Files a web server should not serve.** A clone carries `.git`, the project's entire history; on
@@ -203,9 +203,9 @@ location ~ /wp-content/plugins/.*/\.(git|svn)(/|$) { deny all; }
 location ~ /wp-content/plugins/.*\.(sql|md|log|ya?ml|lock)$ { deny all; }
 ```
 
-The plugin also checks itself. **WP BBS Slots → Dashboard** has an **Install health** panel, and an
+The plugin also checks itself. **Maddog BBS Slots → Dashboard** has an **Install health** panel, and an
 administrator sees a notice on the Plugins screen and the game's own screens, if the folder is not
-named `wp-bbs-slots`, if a `.git` directory is present (it asks your site whether it actually serves
+named `maddog-bbs-slots`, if a `.git` directory is present (it asks your site whether it actually serves
 it, and remembers the answer for a day), if any other git file or folder came along (`.gitattributes`, `.gitignore`, `.github` and the like,
 anywhere in the plugin), if a second copy of the plugin is installed, or if
 files from an older version (such as `sql/install.sql`) were left behind by copying an update over
@@ -223,10 +223,10 @@ source, and there are three ways to package it.
 From a clone of the repository:
 
 ```bash
-git archive --format=zip --prefix=wp-bbs-slots/ -o wp-bbs-slots-1.3.5.zip HEAD
+git archive --format=zip --prefix=maddog-bbs-slots/ -o maddog-bbs-slots-1.7.0.zip HEAD
 ```
 
-That gives a zip whose single top-level folder is `wp-bbs-slots`, which is what **Plugins → Add New →
+That gives a zip whose single top-level folder is `maddog-bbs-slots`, which is what **Plugins → Add New →
 Upload Plugin** expects. It takes the files from the **last commit**, not the working tree, so
 uncommitted edits are left out, and `.gitattributes` keeps development-only files (`.gitignore`,
 `.gitattributes`, `.github`, `tools/` and the setup guide) out of the archive. On Windows the same command works in Git
@@ -241,11 +241,11 @@ same job with nothing but PHP:
 php tools/build-zip.php
 ```
 
-That writes `wp-bbs-slots-<version>.zip` next to the plugin folder, taking the version from the plugin
+That writes `maddog-bbs-slots-<version>.zip` next to the plugin folder, taking the version from the plugin
 header, and prints the path, the file count and the size. Pass a path to put it somewhere else:
 
 ```bash
-php tools/build-zip.php /path/to/wp-bbs-slots.zip
+php tools/build-zip.php /path/to/maddog-bbs-slots.zip
 ```
 
 It needs PHP's `zip` extension, which is standard on hosting but sometimes switched off in a
@@ -260,7 +260,7 @@ refuses to run over the web, and `tools/` is left out of both builds, so it neve
 #### 3. Zipping the folder by hand
 
 ```bash
-cd .. && zip -r wp-bbs-slots.zip wp-bbs-slots -x '*/.git*' '*/tools/*' '*/docs/SETUP-BBS-ON-WORDPRESS.md' '*.zip' '*.log'
+cd .. && zip -r maddog-bbs-slots.zip maddog-bbs-slots -x '*/.git*' '*/tools/*' '*/docs/SETUP-BBS-ON-WORDPRESS.md' '*.zip' '*.log'
 ```
 
 `'*/.git*'` covers the `.git` and `.github` folders and the `.gitignore` and `.gitattributes` files.
@@ -281,28 +281,28 @@ Only the plugin itself belongs in the zip. Leave these out (methods 1 and 2 do i
 | `.vscode/`, `.idea/`, `node_modules/`, `vendor/` | editor settings and dependency folders, if you have any |
 | `*.zip`, `*.log`, `*.swp`, `*.bak`, `.DS_Store`, `Thumbs.db`, `desktop.ini` | earlier builds, logs and editor or system leftovers |
 
-Everything else ships: `wp-bbs-slots.php`, `uninstall.php`, `index.php`, `.htaccess`, `README.md`,
+Everything else ships: `maddog-bbs-slots.php`, `uninstall.php`, `index.php`, `.htaccess`, `README.md`,
 `SECURITY.md`, `LICENSE`, and the `admin/`, `assets/`, `docs/` (just its `index.php`), `includes/`,
-`maintenance/` and `sql/` folders. If any of the left-out items reach a site anyway, **WP BBS Slots →
+`maintenance/` and `sql/` folders. If any of the left-out items reach a site anyway, **Maddog BBS Slots →
 Dashboard → Install health** lists them.
 
 #### Checking the zip
 
-Whichever you use, the zip should contain **one top-level folder named `wp-bbs-slots`** with
-`wp-bbs-slots.php` directly inside it, and nothing from the list above. To check, list the zip and
+Whichever you use, the zip should contain **one top-level folder named `maddog-bbs-slots`** with
+`maddog-bbs-slots.php` directly inside it, and nothing from the list above. To check, list the zip and
 look for anything that should not be there; the second command should print nothing:
 
 ```bash
-unzip -l wp-bbs-slots-1.3.5.zip
-unzip -l wp-bbs-slots-1.3.5.zip | grep -E '/\.git|/tools/|SETUP-BBS|\.zip$|\.log$'
+unzip -l maddog-bbs-slots-1.7.0.zip
+unzip -l maddog-bbs-slots-1.7.0.zip | grep -E '/\.git|/tools/|SETUP-BBS|\.zip$|\.log$'
 ```
 
 #### Cutting a release
 
-1. Raise the version in **both** places in `wp-bbs-slots.php`: the `Version:` line in the plugin header
-   and the `WPBBS_VERSION` constant. The header is what WordPress shows; the constant is what the game's
+1. Raise the version in **both** places in `maddog-bbs-slots.php`: the `Version:` line in the plugin header
+   and the `MDBBS_VERSION` constant. The header is what WordPress shows; the constant is what the game's
    footer shows and what busts browser caches for the stylesheet and script.
-2. If the database tables changed, raise `WPBBS_DB_VERSION` as well, so existing sites update their
+2. If the database tables changed, raise `MDBBS_DB_VERSION` as well, so existing sites update their
    tables on the next page load.
 3. Commit and push.
 4. Build the zip with `git archive` (method 1), so it matches the commit exactly, and check it as above.
@@ -313,15 +313,17 @@ unzip -l wp-bbs-slots-1.3.5.zip | grep -E '/\.git|/tools/|SETUP-BBS|\.zip$|\.log
 
 | Page | Slug | Shortcode |
 |---|---|---|
-| WP BBS Slots (home and how to play) | `wp-bbs-slots` | `[wpbs-home]` |
-| WP BBS Slots - Play | `wp-bbs-slots-play` | `[wpbs-play]` |
-| WP BBS Slots - Gazette | `wp-bbs-slots-gazette` | `[wpbs-gazette]` |
-| WP BBS Slots - Hall of Fame | `wp-bbs-slots-hall-of-fame` | `[wpbs-hof]` |
+| Maddog BBS Slots (home and how to play) | `maddog-bbs-slots` | `[mdbbs-home]` |
+| Maddog BBS Slots - Play | `maddog-bbs-slots-play` | `[mdbbs-play]` |
+| Maddog BBS Slots - Gazette | `maddog-bbs-slots-gazette` | `[mdbbs-gazette]` |
+| Maddog BBS Slots - Hall of Fame | `maddog-bbs-slots-hall-of-fame` | `[mdbbs-hof]` |
 
 The home page, Gazette and Hall of Fame are public. Play asks visitors to sign in, and asks a
 signed-in user without a player name to choose one first. If you create pages by hand, keep these
 slugs: the plugin finds its pages by slug. Each shortcode also answers to an underscore spelling
-(`[wpbs_gazette]`, `[wpbs_hof]` and so on), and the Hall of Fame to `[wpb-hof]` as well.
+(`[mdbbs_gazette]`, `[mdbbs_hof]` and so on). The shortcodes from before the rename to Maddog BBS
+Slots (`[wpbs-home]`, `[wpbs-play]`, `[wpbs-gazette]`, `[wpbs-hof]`, their underscore spellings and
+`[wpb-hof]`) still work, so existing pages and widgets need no editing.
 
 ### Widgets: the Gazette and Hall of Fame in a sidebar
 
@@ -329,8 +331,8 @@ Add a **Shortcode** block to a sidebar or footer (**Appearance → Widgets** on 
 Site Editor's template parts on block themes; or a page builder's Shortcode element) and paste one of:
 
 ```
-[wpbs-gazette limit=10 compact=1]   the progressive and the top 10 scores
-[wpb-hof limit=10 compact=1]        the Hall of Fame records and the top 10 scores
+[mdbbs-gazette limit=10 compact=1]   the progressive and the top 10 scores
+[mdbbs-hof limit=10 compact=1]      the Hall of Fame records and the top 10 scores
 ```
 
 | Attribute | Gazette | Hall of Fame |
@@ -344,7 +346,7 @@ The Gazette shows where the progressive stands, **who played today** (with their
 score), the **top 20 scores**, and the news: new players, big wins (50,000 or more by default),
 jackpots, new Hall of Fame records, the first player to reach each rank, bailouts, the daily
 top-up, each player's first spin of the day (with the credits and spins they sat down with) and the
-end of their day (their last spin, or running out of credits, with their score). News is kept for 30 days by default. Its masthead is the `WPBBS_GAZETTE_NAME` constant in
+end of their day (their last spin, or running out of credits, with their score). News is kept for 30 days by default. Its masthead is the `MDBBS_GAZETTE_NAME` constant in
 the plugin's main file.
 
 ### The Hall of Fame
@@ -363,7 +365,7 @@ and the top scores.
 
 ## Administration
 
-The **WP BBS Slots** menu in wp-admin (administrators only):
+The **Maddog BBS Slots** menu in wp-admin (administrators only):
 
 - **Dashboard:** player and jackpot figures, page status, **Create pages** (with the optional menu
   link), widget shortcodes and recent admin activity.
@@ -409,7 +411,7 @@ Or run the game's job directly, once a day at your site's midnight (cron uses th
 often UTC):
 
 ```bash
-php /path/to/wordpress/wp-content/plugins/wp-bbs-slots/maintenance/daily_maintenance.php --wp-path=/path/to/wordpress
+php /path/to/wordpress/wp-content/plugins/maddog-bbs-slots/maintenance/daily_maintenance.php --wp-path=/path/to/wordpress
 ```
 
 Running both is safe: the job takes a database lock and refuses to run twice on the same day. The
@@ -419,10 +421,47 @@ Maintenance screen prints these commands with your site's real URL and paths fil
 
 - **Updating:** replace the plugin folder with the new version. Database changes are applied
   automatically on the next page load.
+- **Coming from WP BBS Slots** (1.6.0 and earlier): see the next section.
+
 - **Deactivating** stops the scheduled job but keeps all game data.
 - **Deleting** the plugin from the Plugins screen removes the scheduled job. It removes the game's
   tables and settings **only if** *Delete all data* is ticked under **Settings**; otherwise the data
   stays for a later reinstall. The game pages are ordinary pages for you to remove.
+
+### Moving from WP BBS Slots (1.6.0 and earlier)
+
+Version 1.7.0 renamed the plugin from WP BBS Slots to Maddog BBS Slots. WordPress knows a plugin by
+its folder, and the folder is now `maddog-bbs-slots` (it was `wp-bbs-slots`), so the new version
+installs **beside** the old one rather than replacing it. Your players, scores, Hall of Fame and
+settings move across on their own:
+
+1. **Plugins → Add New → Upload Plugin**, choose `maddog-bbs-slots-1.7.0.zip`, then **Activate**.
+   Leave the old plugin where it is for now.
+2. On activation, Maddog BBS Slots deactivates WP BBS Slots, renames its tables from `wp_wpbbs_*`
+   to `wp_mdbbs_*` (a rename: every row stays), moves its options from `wpbbs_*` to `mdbbs_*`, and
+   swaps the daily job for the new one. The move is recorded in the admin log on the Dashboard. If a
+   table or option already exists under the new name, nothing is overwritten: the old one is kept and
+   the log says which. If a table cannot be renamed (a database user without the `ALTER` privilege,
+   say), any renames already made are undone, nothing else is changed, the old plugin keeps running,
+   and Maddog BBS Slots refuses to activate and says why.
+3. Your game pages keep their URLs (`/wp-bbs-slots/`, `/wp-bbs-slots-play/` and so on). Page and menu
+   titles that still read exactly as the old plugin wrote them are changed to the new name; titles you
+   edited yourself are left alone. **Create pages** on the Dashboard keeps using these pages and does not
+   make new ones. If you would rather have the new slugs, edit each page's URL yourself; the game finds
+   its pages by ID, so nothing else needs changing (old links to the previous URLs will then stop working).
+4. **Then** delete WP BBS Slots from the Plugins screen. Its data has already moved, so its uninstaller
+   finds nothing to remove. A notice on the Plugins screen reminds you while it is still installed. Do not
+   activate it again: it would start an empty game of its own.
+5. **If you run maintenance from a system cron job**, update its command: the script is now in
+   `wp-content/plugins/maddog-bbs-slots/maintenance/`. The `WPBBS_WP_PATH` environment variable still
+   works, though `MDBBS_WP_PATH` is the new name.
+
+What changes for anyone who customised the game: the shortcodes are now `[mdbbs-home]`,
+`[mdbbs-play]`, `[mdbbs-gazette]` and `[mdbbs-hof]` (the old ones still work); the CSS classes and custom
+properties are prefixed `mdbbs-` instead of `wpbbs-`, so any theme CSS that targeted `.wpbbs-...`
+needs the new prefix; the stylesheet and script handles and the text domain are `maddog-bbs-slots`; and
+the admin screens are at `admin.php?page=mdbbs_dashboard` and so on. A player halfway through a spin
+when the update lands may see one "expired" message; reloading the page fixes it.
 
 ---
 
@@ -430,7 +469,7 @@ Maintenance screen prints these commands with your site's real URL and paths fil
 
 Copyright (C) 2026 Bill Mantz, <https://maddogproductions.online/>
 
-WP BBS Slots is released under the **GNU General Public License, version 2 or later** (GPLv2+), the
+Maddog BBS Slots is released under the **GNU General Public License, version 2 or later** (GPLv2+), the
 same license as WordPress itself. The full text is in [LICENSE](LICENSE).
 
 You are free to use, modify and redistribute it, including commercially, provided derivative works
@@ -443,13 +482,14 @@ is with you.
 ## Code layout
 
 ```
-wp-bbs-slots.php              plugin bootstrap and hooks
+maddog-bbs-slots.php              plugin bootstrap and hooks
 .htaccess                     refuses .git, the schema and docs on Apache, for installs from a clone
 uninstall.php                 removes the cron job, and the data if "Delete all data" is ticked
 SECURITY.md                   how to report a vulnerability, and how input is handled
 sql/schema.php                database schema (applied with dbDelta and the site's table prefix)
-includes/class-wpbbs-core.php settings, table names, logging, symbols, wagers, ranks
-includes/class-wpbbs-health.php warns if the install came from a clone or a branch-named zip
+includes/class-mdbbs-core.php settings, table names, logging, symbols, wagers, ranks
+includes/class-mdbbs-health.php warns if the install came from a clone or a branch-named zip
+includes/class-mdbbs-migration.php moves the data of the old WP BBS Slots plugin across, once
 tools/build-zip.php           builds an installable zip with PHP alone (not shipped in releases)
 tools/build-logo.py           draws the ANSI-art logo in assets/img (not shipped in releases)
 includes/services/            players, the machine (spins, scores, jackpot, bailout),
@@ -466,12 +506,12 @@ All tables use the site's table prefix (shown as `wp_`).
 
 | Table | Contents |
 |---|---|
-| wp_wpbbs_players | one row per player: WordPress user, player name, bankroll, spins, dates of the last top-up and bailout, the dates their day's play was last started and finished, last wager, rank reached and days played, today's play and lifetime stats |
-| wp_wpbbs_state | the progressive jackpot |
-| wp_wpbbs_jackpots | every jackpot won |
-| wp_wpbbs_records | Hall of Fame records: highest spin, longest streak, first to each rank |
-| wp_wpbbs_monthly | each player's highest bankroll for each month |
-| wp_wpbbs_news | the Gazette |
-| wp_wpbbs_admin_log | admin audit log |
+| wp_mdbbs_players | one row per player: WordPress user, player name, bankroll, spins, dates of the last top-up and bailout, the dates their day's play was last started and finished, last wager, rank reached and days played, today's play and lifetime stats |
+| wp_mdbbs_state | the progressive jackpot |
+| wp_mdbbs_jackpots | every jackpot won |
+| wp_mdbbs_records | Hall of Fame records: highest spin, longest streak, first to each rank |
+| wp_mdbbs_monthly | each player's highest bankroll for each month |
+| wp_mdbbs_news | the Gazette |
+| wp_mdbbs_admin_log | admin audit log |
 
-Options: `wpbbs_settings`, `wpbbs_db_version`, `wpbbs_page_ids`, `wpbbs_nav_post_id`, `wpbbs_last_daily`, `wpbbs_daily_log`.
+Options: `mdbbs_settings`, `mdbbs_db_version`, `mdbbs_page_ids`, `mdbbs_nav_post_id`, `mdbbs_last_daily`, `mdbbs_daily_log`, and `mdbbs_migrated_from_wpbbs` (when the move from WP BBS Slots was made).
