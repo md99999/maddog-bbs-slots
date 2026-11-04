@@ -11,16 +11,16 @@ if (!defined('ABSPATH')) exit;
  * clone carries a .git directory that some servers will happily serve. Documentation only helps
  * the people who read it, so the plugin checks itself and says so in wp-admin.
  */
-class WPBBS_Health {
+class MDBBS_Health {
     /** The folder name a release zip unpacks to, and the one updates will use. */
-    const SLUG = 'wp-bbs-slots';
+    const SLUG = 'maddog-bbs-slots';
 
     /**
      * @return array list of ['level' => 'error'|'warning', 'title' => string, 'body' => string (HTML)]
      */
     public static function issues() {
         $out = [];
-        foreach ([self::check_duplicates(), self::check_git(), self::check_folder(), self::check_stale_files(), self::check_git_files()] as $issue) {
+        foreach ([self::check_migration(), self::check_legacy(), self::check_duplicates(), self::check_git(), self::check_folder(), self::check_stale_files(), self::check_git_files()] as $issue) {
             if ($issue) $out[] = $issue;
         }
         return $out;
@@ -28,7 +28,7 @@ class WPBBS_Health {
 
     /** The folder this copy lives in, e.g. "Imperial-Barons-Online-main". */
     public static function folder() {
-        return basename(untrailingslashit(WPBBS_PATH));
+        return basename(untrailingslashit(MDBBS_PATH));
     }
 
     /**
@@ -52,11 +52,47 @@ class WPBBS_Health {
         ];
     }
 
+    /** The old plugin's data could not be moved here (see MDBBS_Migration). */
+    private static function check_migration() {
+        $error = MDBBS_Migration::last_error();
+        if ($error === '') return null;
+        return [
+            'level' => 'error',
+            'title' => 'The game data could not be moved from ' . MDBBS_Migration::LEGACY_NAME,
+            'body'  => '<p>' . esc_html($error) . '</p><p>Nothing was changed: the old tables and settings are as they'
+                . ' were. Deactivate ' . esc_html(MDBBS_GAME_NAME) . ', fix the cause (usually a database user without'
+                . ' the ALTER privilege), then activate it again.</p>',
+        ];
+    }
+
+    /**
+     * The old WP BBS Slots plugin, still installed after its data moved to this one. It is
+     * deactivated by the move; this asks for it to be deleted, so it cannot be switched back on.
+     */
+    private static function check_legacy() {
+        $others = self::other_copies(dirname(MDBBS_Migration::LEGACY_PLUGIN) . '.php');
+        if (!$others) return null;
+        $list = '<code>' . implode('</code>, <code>', array_map('esc_html', $others)) . '</code>';
+        $moved = get_option(MDBBS_Migration::DONE_OPTION) !== false;
+        return [
+            'level' => 'warning',
+            'title' => 'The old ' . MDBBS_Migration::LEGACY_NAME . ' plugin is still installed',
+            'body'  => '<p>' . esc_html(MDBBS_GAME_NAME) . ' is the same game under its new name. The old copy is in '
+                . $list . ' in <code>wp-content/plugins</code>.</p>'
+                . ($moved
+                    ? '<p>Its players, scores and settings have already been moved here and it has been deactivated.'
+                        . ' Delete it from the <a href="' . esc_url(admin_url('plugins.php')) . '">Plugins</a> screen;'
+                        . ' that removes only its files. Do not activate it again: it would start an empty game of its own.</p>'
+                    : '<p>Deactivate it, then deactivate and activate ' . esc_html(MDBBS_GAME_NAME) . ' to move its data'
+                        . ' across, before deleting it.</p>'),
+        ];
+    }
+
     /** A .git directory inside the plugin means the whole project history is sitting in the web root. */
     private static function check_git() {
-        if (!is_dir(WPBBS_PATH . '.git')) return null;
+        if (!is_dir(MDBBS_PATH . '.git')) return null;
         $reachable = self::git_reachable();
-        $htaccess = file_exists(WPBBS_PATH . '.htaccess');
+        $htaccess = file_exists(MDBBS_PATH . '.htaccess');
         $body = '<p>This copy was installed from a git clone, so <code>' . esc_html(self::folder())
             . '/.git</code> sits inside <code>wp-content/plugins</code>. That directory holds the project\'s entire'
             . ' history, and on many servers it can be read by anyone who knows the path.</p>';
@@ -93,7 +129,7 @@ class WPBBS_Health {
                 . ' installing a release zip later adds a <em>second</em> copy rather than updating this one, and you'
                 . ' end up with two plugins sharing one set of tables. Rename the folder to <code>'
                 . esc_html(self::SLUG) . '</code> and activate it again: deactivate the plugin first, rename the folder'
-                . ' over FTP, SFTP or your host\'s file manager, then activate <strong>' . esc_html(WPBBS_GAME_NAME)
+                . ' over FTP, SFTP or your host\'s file manager, then activate <strong>' . esc_html(MDBBS_GAME_NAME)
                 . '</strong> on the Plugins screen. Your game data is in the database and is not affected.</p>',
         ];
     }
@@ -123,7 +159,7 @@ class WPBBS_Health {
 
     /** Paths, relative to the plugin folder, of every file or folder whose name starts with ".git", except .git itself. */
     public static function git_files() {
-        $root = untrailingslashit(WPBBS_PATH);
+        $root = untrailingslashit(MDBBS_PATH);
         $found = [];
         $walk = function ($dir, $rel) use (&$walk, &$found) {
             $entries = @scandir($dir);
@@ -151,7 +187,7 @@ class WPBBS_Health {
     private static function check_stale_files() {
         $stale = [];
         foreach (['sql/install.sql'] as $file) {
-            if (file_exists(WPBBS_PATH . $file)) $stale[] = $file;
+            if (file_exists(MDBBS_PATH . $file)) $stale[] = $file;
         }
         if (!$stale) return null;
         $list = '<code>' . implode('</code>, <code>', array_map('esc_html', $stale)) . '</code>';
@@ -168,7 +204,9 @@ class WPBBS_Health {
     }
 
     /** Other directories in wp-content/plugins holding this plugin's main file. */
-    private static function other_copies() {
+    /** Folders in wp-content/plugins, other than this one, holding $main (this plugin's main file by default). */
+    private static function other_copies($main = null) {
+        $main = $main ?: self::SLUG . '.php';
         $dir = defined('WP_PLUGIN_DIR') ? WP_PLUGIN_DIR : WP_CONTENT_DIR . '/plugins';
         $here = self::folder();
         $found = [];
@@ -177,7 +215,7 @@ class WPBBS_Health {
         foreach ($entries as $entry) {
             if ($entry === '.' || $entry === '..' || $entry === $here) continue;
             if (!is_dir($dir . '/' . $entry)) continue;
-            if (file_exists($dir . '/' . $entry . '/' . self::SLUG . '.php')) $found[] = $entry;
+            if (file_exists($dir . '/' . $entry . '/' . $main)) $found[] = $entry;
         }
         return $found;
     }
@@ -189,12 +227,12 @@ class WPBBS_Health {
      * @return bool|null true served, false refused, null could not tell
      */
     public static function git_reachable($fresh = false) {
-        $key = 'wpbbs_git_reachable';
+        $key = 'mdbbs_git_reachable';
         if (!$fresh) {
             $cached = get_transient($key);
             if ($cached !== false) return $cached === 'yes' ? true : ($cached === 'no' ? false : null);
         }
-        $url = plugins_url('.git/HEAD', WPBBS_PATH . self::SLUG . '.php');
+        $url = plugins_url('.git/HEAD', MDBBS_PATH . self::SLUG . '.php');
         // Follow redirects, or a site that sends http to https would look safe when it is not.
         $response = wp_remote_get($url, ['timeout' => 5, 'redirection' => 3, 'sslverify' => false]);
         if (is_wp_error($response)) {
@@ -218,11 +256,11 @@ class WPBBS_Health {
         if (!current_user_can('manage_options')) return;
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
         $id = $screen ? $screen->id : '';
-        if ($id !== 'plugins' && strpos($id, 'wpbbs_') === false) return;
+        if ($id !== 'plugins' && strpos($id, 'mdbbs_') === false) return;
         foreach (self::issues() as $issue) {
             printf('<div class="notice notice-%s"><p><strong>%s &mdash; %s</strong></p>%s</div>',
                 $issue['level'] === 'error' ? 'error' : 'warning',
-                esc_html(WPBBS_GAME_NAME), esc_html($issue['title']), $issue['body']);
+                esc_html(MDBBS_GAME_NAME), esc_html($issue['title']), $issue['body']);
         }
     }
 }

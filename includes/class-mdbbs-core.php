@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) exit;
  * Thrown by services when a player action cannot be completed.
  * The message is shown to the player; $type controls the notice colour.
  */
-class WPBBS_Exception extends Exception {
+class MDBBS_Exception extends Exception {
     public $type;
     public function __construct($message, $type = 'error') {
         parent::__construct($message);
@@ -17,17 +17,17 @@ class WPBBS_Exception extends Exception {
     }
 }
 
-class WPBBS_DB {
+class MDBBS_DB {
     const TABLES = ['players', 'state', 'jackpots', 'records', 'monthly', 'news', 'admin_log'];
 
     public static function t($name) {
         global $wpdb;
-        return $wpdb->prefix . 'wpbbs_' . $name;
+        return $wpdb->prefix . 'mdbbs_' . $name;
     }
 }
 
-class WPBBS_Settings {
-    const OPTION = 'wpbbs_settings';
+class MDBBS_Settings {
+    const OPTION = 'mdbbs_settings';
 
     public static function defaults() {
         return [
@@ -88,11 +88,11 @@ class WPBBS_Settings {
     }
 }
 
-class WPBBS_Log {
+class MDBBS_Log {
     /** A public Gazette item. */
     public static function news($type, $message, $player_id = 0) {
         global $wpdb;
-        $wpdb->insert(WPBBS_DB::t('news'), [
+        $wpdb->insert(MDBBS_DB::t('news'), [
             'event_type' => substr(sanitize_key($type), 0, 20),
             'player_id'  => (int) $player_id,
             'message'    => mb_substr($message, 0, 255),
@@ -103,7 +103,7 @@ class WPBBS_Log {
     /** Administrative audit log. */
     public static function admin($type, $message) {
         global $wpdb;
-        $wpdb->insert(WPBBS_DB::t('admin_log'), [
+        $wpdb->insert(MDBBS_DB::t('admin_log'), [
             'event_type' => substr(sanitize_key($type), 0, 20),
             'message'    => mb_substr($message, 0, 255),
             'user_id'    => get_current_user_id(),
@@ -112,7 +112,7 @@ class WPBBS_Log {
     }
 }
 
-class WPBBS_Game {
+class MDBBS_Game {
     /**
      * The reel symbols, most common first.
      *
@@ -202,11 +202,11 @@ class WPBBS_Game {
     public static function jackpot() {
         global $wpdb;
         $amount = $wpdb->get_var($wpdb->prepare(
-            'SELECT state_value FROM ' . WPBBS_DB::t('state') . ' WHERE state_key = %s', 'jackpot'
+            'SELECT state_value FROM ' . MDBBS_DB::t('state') . ' WHERE state_key = %s', 'jackpot'
         ));
         if ($amount === null) {
-            WPBBS_Installer::seed_state();
-            return WPBBS_Settings::get('jackpot_seed');
+            MDBBS_Installer::seed_state();
+            return MDBBS_Settings::get('jackpot_seed');
         }
         return (int) $amount;
     }

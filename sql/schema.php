@@ -1,6 +1,6 @@
 <?php
 /**
- * The database schema, applied with dbDelta by WPBBS_Installer::install_schema(), which replaces
+ * The database schema, applied with dbDelta by MDBBS_Installer::install_schema(), which replaces
  * {prefix} with the site's table prefix and {charset_collate} with its character set.
  *
  * It is a PHP file rather than a .sql one so that no web server will hand it out: loaded directly
@@ -9,7 +9,7 @@
 if (!defined('ABSPATH')) exit;
 
 return <<<'SQL'
-CREATE TABLE {prefix}wpbbs_players (
+CREATE TABLE {prefix}mdbbs_players (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   user_id bigint(20) unsigned NOT NULL DEFAULT 0,
   player_name varchar(20) NOT NULL DEFAULT '',
@@ -42,13 +42,13 @@ CREATE TABLE {prefix}wpbbs_players (
   KEY bankroll (bankroll),
   KEY last_played (last_played)
 ) {charset_collate};
-CREATE TABLE {prefix}wpbbs_state (
+CREATE TABLE {prefix}mdbbs_state (
   state_key varchar(40) NOT NULL,
   state_value bigint(20) NOT NULL DEFAULT 0,
   updated_at datetime DEFAULT NULL,
   PRIMARY KEY  (state_key)
 ) {charset_collate};
-CREATE TABLE {prefix}wpbbs_jackpots (
+CREATE TABLE {prefix}mdbbs_jackpots (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   player_id bigint(20) unsigned NOT NULL DEFAULT 0,
   player_name varchar(20) NOT NULL DEFAULT '',
@@ -59,7 +59,7 @@ CREATE TABLE {prefix}wpbbs_jackpots (
   KEY amount (amount),
   KEY player_id (player_id)
 ) {charset_collate};
-CREATE TABLE {prefix}wpbbs_records (
+CREATE TABLE {prefix}mdbbs_records (
   record_key varchar(40) NOT NULL,
   player_id bigint(20) unsigned NOT NULL DEFAULT 0,
   player_name varchar(20) NOT NULL DEFAULT '',
@@ -69,7 +69,7 @@ CREATE TABLE {prefix}wpbbs_records (
   PRIMARY KEY  (record_key),
   KEY player_id (player_id)
 ) {charset_collate};
-CREATE TABLE {prefix}wpbbs_monthly (
+CREATE TABLE {prefix}mdbbs_monthly (
   player_id bigint(20) unsigned NOT NULL DEFAULT 0,
   month char(7) NOT NULL DEFAULT '',
   peak_bankroll bigint(20) NOT NULL DEFAULT 0,
@@ -77,7 +77,7 @@ CREATE TABLE {prefix}wpbbs_monthly (
   PRIMARY KEY  (player_id,month),
   KEY month_peak (month,peak_bankroll)
 ) {charset_collate};
-CREATE TABLE {prefix}wpbbs_news (
+CREATE TABLE {prefix}mdbbs_news (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   event_type varchar(20) NOT NULL DEFAULT '',
   player_id bigint(20) unsigned NOT NULL DEFAULT 0,
@@ -87,7 +87,7 @@ CREATE TABLE {prefix}wpbbs_news (
   KEY created_at (created_at),
   KEY player_id (player_id)
 ) {charset_collate};
-CREATE TABLE {prefix}wpbbs_admin_log (
+CREATE TABLE {prefix}mdbbs_admin_log (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   event_type varchar(20) NOT NULL DEFAULT '',
   message varchar(255) NOT NULL DEFAULT '',

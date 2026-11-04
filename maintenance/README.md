@@ -8,7 +8,7 @@ It finds and loads WordPress by itself, so it can be run from any directory, onc
 site's midnight:
 
 ```
-php /path/to/wordpress/wp-content/plugins/wp-bbs-slots/maintenance/daily_maintenance.php --wp-path=/path/to/wordpress
+php /path/to/wordpress/wp-content/plugins/maddog-bbs-slots/maintenance/daily_maintenance.php --wp-path=/path/to/wordpress
 ```
 
 Running it alongside WP-Cron is safe: the job takes a database lock before it does anything and
@@ -16,6 +16,6 @@ refuses to run twice on the same day, and nobody is ever topped up twice in a da
 topped up and given their spins the first time they visit on a new day, so the game works even if
 cron is late.
 
-**WP BBS Slots → Maintenance** in wp-admin shows this command with your site's real paths, and the
+**Maddog BBS Slots → Maintenance** in wp-admin shows this command with your site's real paths, and the
 recommended alternative of triggering `wp-cron.php` every 5 minutes. See
 **[Scheduled maintenance (cron)](../README.md#scheduled-maintenance-cron)** in the main README.

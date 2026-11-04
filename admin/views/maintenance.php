@@ -1,15 +1,15 @@
 <?php
 if (!defined('ABSPATH')) exit;
 // Keep the job on midnight in the site's timezone, even if that was changed before this version.
-if (!WPBBS_Maintenance::next_run() || WPBBS_Maintenance::off_midnight()) WPBBS_Maintenance::reschedule();
-$next = WPBBS_Maintenance::next_run();
+if (!MDBBS_Maintenance::next_run() || MDBBS_Maintenance::off_midnight()) MDBBS_Maintenance::reschedule();
+$next = MDBBS_Maintenance::next_run();
 $next = $next ? wp_date('Y-m-d H:i:s', $next) : 'not scheduled';
 $tz = wp_timezone_string();
 $cron_url = home_url('/wp-cron.php?doing_wp_cron');
 $php_bin = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
-$daily_php = WPBBS_PATH . 'maintenance/daily_maintenance.php';
+$daily_php = MDBBS_PATH . 'maintenance/daily_maintenance.php';
 $wp_cron_off = defined('DISABLE_WP_CRON') && DISABLE_WP_CRON;
-$floor = WPBBS_Game::fmt(WPBBS_Settings::get('daily_floor'));
+$floor = MDBBS_Game::fmt(MDBBS_Settings::get('daily_floor'));
 
 /** A read-only field that selects itself when clicked, so the command is easy to copy. */
 $cmd = function ($command) {
@@ -22,9 +22,9 @@ $cmd = function ($command) {
         <tr>
             <td><strong>Daily</strong></td>
             <td>Gives every player the day's spins, tops every bankroll under <?php echo esc_html($floor); ?> up to <?php echo esc_html($floor); ?>, and purges old news.</td>
-            <td><?php echo esc_html(get_option('wpbbs_last_daily', 'never')); ?></td>
+            <td><?php echo esc_html(get_option('mdbbs_last_daily', 'never')); ?></td>
             <td><?php echo esc_html($next); ?></td>
-            <td><?php echo WPBBS_Admin::form_open('run_maintenance'); ?><button class="button">Run now</button></form></td>
+            <td><?php echo MDBBS_Admin::form_open('run_maintenance'); ?><button class="button">Run now</button></form></td>
         </tr>
     </tbody>
 </table>
@@ -34,10 +34,10 @@ $cmd = function ($command) {
     they visit on a new day, so play works even if cron is late. Running the job twice in a day does no harm: nobody gets a second day's
     spins or top-up.</p>
 
-<?php $runs = WPBBS_Maintenance::run_log(); ?>
-<div class="wpbbs-box">
+<?php $runs = MDBBS_Maintenance::run_log(); ?>
+<div class="mdbbs-box">
     <h2>Daily job log</h2>
-    <p class="description">One line per day for the last <?php echo (int) WPBBS_Maintenance::LOG_DAYS; ?> days: the run that did the day's work,
+    <p class="description">One line per day for the last <?php echo (int) MDBBS_Maintenance::LOG_DAYS; ?> days: the run that did the day's work,
         or, if none did, the first attempt. "Attempts" counts every time the job was started that day, including runs that were skipped
         because the day was already done.</p>
     <?php if (!$runs) : ?>
@@ -60,7 +60,7 @@ $cmd = function ($command) {
     <?php endif; ?>
 </div>
 
-<div class="wpbbs-box">
+<div class="mdbbs-box">
     <h2>Set up a real cron job</h2>
     <p>WordPress's own scheduler (WP-Cron) only runs when someone visits the site. A real cron job, added in your hosting control
         panel, makes the daily top-up happen at midnight even on a quiet site.</p>
@@ -85,4 +85,4 @@ $cmd = function ($command) {
 </div>
 
 <p class="description" style="max-width:860px">Resetting the jackpot, the scores or the whole game is under
-    <a href="<?php echo esc_url(admin_url('admin.php?page=wpbbs_settings#wpbbs-danger')); ?>">Settings &rarr; DANGER SECTION</a>.</p>
+    <a href="<?php echo esc_url(admin_url('admin.php?page=mdbbs_settings#mdbbs-danger')); ?>">Settings &rarr; DANGER SECTION</a>.</p>

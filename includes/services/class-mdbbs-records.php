@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) exit;
  * The Hall of Fame: all-time records, the first player to reach each rank, jackpot winners and
  * each month's highest bankroll.
  */
-class WPBBS_Records {
+class MDBBS_Records {
     const BIGGEST_SPIN = 'biggest_spin';
     const LONGEST_STREAK = 'longest_streak';
 
@@ -15,7 +15,7 @@ class WPBBS_Records {
      */
     public static function claim($key, $player, $value, $detail = '') {
         global $wpdb;
-        $table = WPBBS_DB::t('records');
+        $table = MDBBS_DB::t('records');
         $now = current_time('mysql');
         $inserted = $wpdb->query($wpdb->prepare(
             "INSERT IGNORE INTO $table (record_key, player_id, player_name, record_value, detail, achieved_at) VALUES (%s, %d, %s, %d, %s, %s)",
@@ -31,17 +31,17 @@ class WPBBS_Records {
 
     /** The record key for being first to a rank. (Keyed by the rank's score, as earlier versions were.) */
     private static function rank_key($level) {
-        return 'rank_' . WPBBS_Game::RANKS[$level]['score'];
+        return 'rank_' . MDBBS_Game::RANKS[$level]['score'];
     }
 
     /** Records the first player to reach each rank up to $level; returns the titles newly claimed. */
     public static function rank_firsts($player, $level) {
         global $wpdb;
         $claimed = [];
-        foreach (WPBBS_Game::RANKS as $i => $r) {
+        foreach (MDBBS_Game::RANKS as $i => $r) {
             if ($i <= 0 || $i > $level) continue;
             $done = $wpdb->query($wpdb->prepare(
-                'INSERT IGNORE INTO ' . WPBBS_DB::t('records') . ' (record_key, player_id, player_name, record_value, detail, achieved_at) VALUES (%s, %d, %s, %d, %s, %s)',
+                'INSERT IGNORE INTO ' . MDBBS_DB::t('records') . ' (record_key, player_id, player_name, record_value, detail, achieved_at) VALUES (%s, %d, %s, %d, %s, %s)',
                 self::rank_key($i), $player->id, $player->player_name, $i, $r['title'], current_time('mysql')
             ));
             if ($done) $claimed[] = $r['title'];
@@ -52,32 +52,32 @@ class WPBBS_Records {
     /** Keeps the player's highest bankroll for the current month. */
     public static function monthly($player_id, $bankroll) {
         global $wpdb;
-        $table = WPBBS_DB::t('monthly');
+        $table = MDBBS_DB::t('monthly');
         // reached_at is assigned before peak_bankroll so it compares against the old peak.
         $wpdb->query($wpdb->prepare(
             "INSERT INTO $table (player_id, month, peak_bankroll, reached_at) VALUES (%d, %s, %d, %s)
              ON DUPLICATE KEY UPDATE
                reached_at = IF(VALUES(peak_bankroll) > peak_bankroll, VALUES(reached_at), reached_at),
                peak_bankroll = GREATEST(peak_bankroll, VALUES(peak_bankroll))",
-            $player_id, WPBBS_Game::month(), $bankroll, current_time('mysql')
+            $player_id, MDBBS_Game::month(), $bankroll, current_time('mysql')
         ));
     }
 
     public static function get($key) {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . WPBBS_DB::t('records') . ' WHERE record_key = %s', $key));
+        return $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . MDBBS_DB::t('records') . ' WHERE record_key = %s', $key));
     }
 
     /** First to reach each rank, lowest rank first. */
     public static function rank_list() {
         global $wpdb;
         $rows = $wpdb->get_results($wpdb->prepare(
-            'SELECT * FROM ' . WPBBS_DB::t('records') . ' WHERE record_key LIKE %s', $wpdb->esc_like('rank_') . '%'
+            'SELECT * FROM ' . MDBBS_DB::t('records') . ' WHERE record_key LIKE %s', $wpdb->esc_like('rank_') . '%'
         ));
         $by_key = [];
         foreach ($rows as $row) $by_key[$row->record_key] = $row;
         $out = [];
-        foreach (WPBBS_Game::RANKS as $i => $r) {
+        foreach (MDBBS_Game::RANKS as $i => $r) {
             if ($i <= 0) continue;
             $out[] = ['title' => $r['title'], 'score' => $r['score'], 'days' => $r['days'], 'record' => $by_key[self::rank_key($i)] ?? null];
         }
@@ -86,13 +86,13 @@ class WPBBS_Records {
 
     public static function biggest_jackpot() {
         global $wpdb;
-        return $wpdb->get_row('SELECT * FROM ' . WPBBS_DB::t('jackpots') . ' ORDER BY amount DESC, id ASC LIMIT 1');
+        return $wpdb->get_row('SELECT * FROM ' . MDBBS_DB::t('jackpots') . ' ORDER BY amount DESC, id ASC LIMIT 1');
     }
 
     public static function jackpots($limit = 10) {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            'SELECT * FROM ' . WPBBS_DB::t('jackpots') . ' ORDER BY won_at DESC, id DESC LIMIT %d', max(1, (int) $limit)
+            'SELECT * FROM ' . MDBBS_DB::t('jackpots') . ' ORDER BY won_at DESC, id DESC LIMIT %d', max(1, (int) $limit)
         ));
     }
 
@@ -100,8 +100,8 @@ class WPBBS_Records {
     public static function best_month() {
         global $wpdb;
         return $wpdb->get_row(
-            'SELECT m.month, m.peak_bankroll, m.reached_at, p.player_name FROM ' . WPBBS_DB::t('monthly') . ' m
-             JOIN ' . WPBBS_DB::t('players') . ' p ON p.id = m.player_id
+            'SELECT m.month, m.peak_bankroll, m.reached_at, p.player_name FROM ' . MDBBS_DB::t('monthly') . ' m
+             JOIN ' . MDBBS_DB::t('players') . ' p ON p.id = m.player_id
              ORDER BY m.peak_bankroll DESC, m.reached_at ASC LIMIT 1'
         );
     }
@@ -109,10 +109,10 @@ class WPBBS_Records {
     /** Each recent month's highest bankroll, newest month first. */
     public static function monthly_leaders($months = 12) {
         global $wpdb;
-        $m = WPBBS_DB::t('monthly');
+        $m = MDBBS_DB::t('monthly');
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT m.month, m.peak_bankroll, p.player_name FROM $m m
-             JOIN " . WPBBS_DB::t('players') . " p ON p.id = m.player_id
+             JOIN " . MDBBS_DB::t('players') . " p ON p.id = m.player_id
              JOIN (SELECT month, MAX(peak_bankroll) AS best FROM $m GROUP BY month) b
                ON b.month = m.month AND b.best = m.peak_bankroll
              ORDER BY m.month DESC, m.reached_at ASC LIMIT %d",

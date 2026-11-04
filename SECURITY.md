@@ -1,7 +1,7 @@
 # Security Policy
 
 > **Found a security issue? Please email [sysop@maddogproductions.online](mailto:sysop@maddogproductions.online).**
-> If you find any security problem in WP BBS Slots, however small, report it privately to that address
+> If you find any security problem in Maddog BBS Slots, however small, report it privately to that address
 > rather than opening a public issue or posting it anywhere else.
 
 ## Reporting a vulnerability
@@ -39,7 +39,7 @@ flawless: it is what to check, and where a mistake would most likely be.
     pass for staff or the game (admin, sysop, moderator and the like) are refused. It is stored once
     and never changed by the player.
   - The **wager** must be plain digits (so `5000 OR 1=1` or `1e3` is refused rather than cast) and
-    one of the fixed values in `WPBBS_Game::BETS`; anything else is refused.
+    one of the fixed values in `MDBBS_Game::BETS`; anything else is refused.
 - **Every game action carries a WordPress nonce**, checked before anything happens, and requires a
   signed-in user. The spin is a POST to `admin-ajax.php` (`wp_ajax_` only, so never for visitors who
   are not signed in), with a plain form POST as the fallback when JavaScript is off.
@@ -97,4 +97,4 @@ arising from its use.
 
 ## Contact
 
-If you find any security issue in WP BBS Slots, please email **sysop@maddogproductions.online**.
+If you find any security issue in Maddog BBS Slots, please email **sysop@maddogproductions.online**.

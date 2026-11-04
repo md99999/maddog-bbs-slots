@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) exit;
  *
  * The Gazette and Hall of Fame take limit="10" and compact="1", for a sidebar widget.
  */
-class WPBBS_Shortcodes {
+class MDBBS_Shortcodes {
     /** Pages readable without signing in. */
     const PUBLIC_PAGES = ['home', 'gazette', 'hof'];
 
@@ -19,9 +19,9 @@ class WPBBS_Shortcodes {
     private static $atts = [];
 
     public static function register() {
-        foreach (WPBBS_UI::shortcodes() as $tag => $key) {
+        foreach (MDBBS_UI::shortcodes() as $tag => $key) {
             add_shortcode($tag, function ($atts) use ($key) {
-                return WPBBS_Shortcodes::render($key, is_array($atts) ? $atts : []);
+                return MDBBS_Shortcodes::render($key, is_array($atts) ? $atts : []);
             });
         }
     }
@@ -43,23 +43,23 @@ class WPBBS_Shortcodes {
     }
 
     public static function render($key, $atts = []) {
-        if (!isset(WPBBS_UI::PAGES[$key])) return '';
+        if (!isset(MDBBS_UI::PAGES[$key])) return '';
         self::$atts = $atts;
         // Shortcodes also run in the block editor's previews; keep those cheap.
         if (is_admin() || (defined('REST_REQUEST') && REST_REQUEST)) {
-            return '<p>[' . esc_html(WPBBS_UI::PAGES[$key][0]) . ']</p>';
+            return '<p>[' . esc_html(MDBBS_UI::PAGES[$key][0]) . ']</p>';
         }
-        wp_enqueue_style('wp-bbs-slots');
-        wp_enqueue_script('wp-bbs-slots');
+        wp_enqueue_style('maddog-bbs-slots');
+        wp_enqueue_script('maddog-bbs-slots');
 
-        $p = is_user_logged_in() ? WPBBS_Player::current() : null;
+        $p = is_user_logged_in() ? MDBBS_Player::current() : null;
         // Views are chosen from this fixed list only; nothing from the request names a file.
-        $view = WPBBS_PATH . 'includes/frontend/views/' . $key . '.php';
+        $view = MDBBS_PATH . 'includes/frontend/views/' . $key . '.php';
 
         ob_start();
         if (self::compact() && in_array($key, self::COMPACT_PAGES, true)) {
             // A widget: the panel and nothing else.
-            echo '<div class="wpbbs-game wpbbs-page-' . esc_attr($key) . ' wpbbs-compact">';
+            echo '<div class="mdbbs-game mdbbs-page-' . esc_attr($key) . ' mdbbs-compact">';
             $compact = true;
             include $view;
             echo '</div>';
@@ -67,22 +67,22 @@ class WPBBS_Shortcodes {
         }
 
         $compact = false;
-        echo '<div class="wpbbs-game wpbbs-page-' . esc_attr($key) . '">';
-        echo '<div class="wpbbs-title">' . esc_html(WPBBS_GAME_NAME) . '</div>';
-        if ($p) echo WPBBS_UI::status_bar($p);
-        echo WPBBS_UI::nav($key);
-        echo WPBBS_UI::render_flashes();
+        echo '<div class="mdbbs-game mdbbs-page-' . esc_attr($key) . '">';
+        echo '<div class="mdbbs-title">' . esc_html(MDBBS_GAME_NAME) . '</div>';
+        if ($p) echo MDBBS_UI::status_bar($p);
+        echo MDBBS_UI::nav($key);
+        echo MDBBS_UI::render_flashes();
 
         if ($key === 'play' && !is_user_logged_in()) {
-            echo '<div class="wpbbs-panel"><h2>Sign in to play</h2><p>Sign in to your account to pick a player name and pull the handle.'
-                . ' The <a href="' . esc_url(WPBBS_UI::url('home')) . '">home page</a> explains how to play.</p>'
-                . WPBBS_UI::sign_in_buttons() . '</div>';
+            echo '<div class="mdbbs-panel"><h2>Sign in to play</h2><p>Sign in to your account to pick a player name and pull the handle.'
+                . ' The <a href="' . esc_url(MDBBS_UI::url('home')) . '">home page</a> explains how to play.</p>'
+                . MDBBS_UI::sign_in_buttons() . '</div>';
         } elseif ($key === 'play' && !$p) {
-            include WPBBS_PATH . 'includes/frontend/views/_name-form.php';
+            include MDBBS_PATH . 'includes/frontend/views/_name-form.php';
         } else {
             include $view;
         }
-        echo WPBBS_UI::footer();
+        echo MDBBS_UI::footer();
         echo '</div>';
         return ob_get_clean();
     }

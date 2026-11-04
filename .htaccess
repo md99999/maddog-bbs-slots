@@ -1,4 +1,4 @@
-# WP BBS Slots: belt and braces for people who deploy this plugin from a
+# Maddog BBS Slots: belt and braces for people who deploy this plugin from a
 # git clone or from GitHub's "Download ZIP", where files that are not part of a release
 # (a .git directory, the schema, the docs) can end up inside wp-content/plugins.
 #
