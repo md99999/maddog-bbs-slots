@@ -34,6 +34,8 @@ if ($compact) :
     $top = MDBBS_Player::top(MDBBS_Shortcodes::limit(10, 100));
     ?>
     <div class="mdbbs-panel mdbbs-hof-compact">
+        <img class="mdbbs-logo mdbbs-logo-widget" src="<?php echo esc_url(MDBBS_URL . 'assets/img/maddog-bbs-slots-logo.svg'); ?>"
+             width="400" height="400" alt="<?php echo esc_attr(MDBBS_GAME_NAME); ?>!">
         <h3>Hall of Fame</h3>
         <ul class="mdbbs-records">
             <?php foreach ($records as $title => $r) : ?>
