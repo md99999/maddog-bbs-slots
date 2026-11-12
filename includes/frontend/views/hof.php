@@ -66,7 +66,9 @@ $ranks = MDBBS_Records::rank_list();
 $winners = MDBBS_Records::jackpots(20);
 $leaders = MDBBS_Records::monthly_leaders(12);
 ?>
-<div class="mdbbs-panel">
+<div class="mdbbs-panel mdbbs-hof-banner">
+    <img class="mdbbs-logo mdbbs-logo-small" src="<?php echo esc_url(MDBBS_URL . 'assets/img/maddog-bbs-slots-logo.svg'); ?>"
+         width="400" height="400" alt="<?php echo esc_attr(MDBBS_GAME_NAME); ?>!">
     <h2>Hall of Fame</h2>
     <div class="mdbbs-table-wrap">
     <table class="mdbbs-table">
