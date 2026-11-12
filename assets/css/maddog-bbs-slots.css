@@ -130,6 +130,11 @@
 .mdbbs-game.mdbbs-game .mdbbs-hero-jackpot { display: block; margin: 0; padding: 18px 16px; }
 .mdbbs-game.mdbbs-game .mdbbs-hero-jackpot p:last-child { margin: 0; }
 @media (max-width: 760px) { .mdbbs-hero-top { grid-template-columns: 1fr; } }
+/* Hall of Fame: a smaller logo centred above the records, so the tables stay near the top of the page. */
+.mdbbs-game.mdbbs-game .mdbbs-hof-banner > h2 { text-align: center; }
+.mdbbs-game .mdbbs-logo.mdbbs-logo-small { width: 240px; margin-bottom: 12px; }
+/* The compact Hall of Fame widget: the logo fills a sidebar's width, up to 200px. */
+.mdbbs-game .mdbbs-logo.mdbbs-logo-widget { width: 200px; margin-bottom: 10px; }
 .mdbbs-game.mdbbs-game .mdbbs-jackpot-label { margin: 0; color: var(--mdbbs-magenta); letter-spacing: .2em; text-transform: uppercase; font-size: .85em; }
 .mdbbs-game.mdbbs-game .mdbbs-jackpot {
   font-size: clamp(2em, 7vw, 3.4em); color: var(--mdbbs-gold); margin: .1em 0 .3em; letter-spacing: .04em;

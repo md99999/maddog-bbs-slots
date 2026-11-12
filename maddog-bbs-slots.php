@@ -5,7 +5,7 @@ Plugin URI: https://github.com/md99999/maddog-bbs-slots
 Author: Bill Mantz
 Author URI: https://maddogproductions.online/
 Description: Maddog BBS Slots: a turn-based progressive slot machine game for WordPress, in the spirit of the old BBS door games. A few spins a day, a bankroll that carries over, a progressive jackpot, a Gazette and a Hall of Fame. Credits have no cash value and are a game score only.
-Version: 1.7.1
+Version: 1.7.3
 Requires PHP: 8.0
 Requires at least: 7.0
 Text Domain: maddog-bbs-slots
@@ -35,7 +35,7 @@ define('MDBBS_GAME_NAME', 'Maddog BBS Slots');
 define('MDBBS_GAZETTE_NAME', 'The Maddog BBS Slots Gazette');
 define('MDBBS_SOURCE_URL', 'https://github.com/md99999/maddog-bbs-slots');
 define('MDBBS_SITE_NAME', 'maddogproductions.online');
-define('MDBBS_VERSION', '1.7.1');
+define('MDBBS_VERSION', '1.7.3');
 define('MDBBS_DB_VERSION', '3');
 define('MDBBS_FILE', __FILE__);
 define('MDBBS_PATH', plugin_dir_path(__FILE__));
