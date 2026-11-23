@@ -195,12 +195,13 @@ many servers anyone who knows the path can read it. Nothing a release zip instal
 every PHP file exits when loaded directly (the database schema is a PHP file for exactly that
 reason), every directory has an empty `index.php` so nothing can be listed, and the rest is
 stylesheets, scripts and public documentation. For copies that carry extra files, the plugin ships
-an `.htaccess` that refuses `.git`, `*.sql`, `*.md`, logs and editor leftovers. Apache is the only
-server that reads `.htaccess`; on nginx, add this to the server block:
+an `.htaccess` that refuses every dotfile and dot-folder (`.git`, `.env`, `.gitignore` and the like),
+`*.sql`, `*.md`, `*.json`, logs and editor leftovers. Apache is the only server that reads `.htaccess`;
+on nginx, add this to the server block, which refuses the same files:
 
 ```nginx
-location ~ /wp-content/plugins/.*/\.(git|svn)(/|$) { deny all; }
-location ~ /wp-content/plugins/.*\.(sql|md|log|ya?ml|lock)$ { deny all; }
+location ~* ^/wp-content/plugins/maddog-bbs-slots/(.*/)?\. { deny all; }
+location ~* ^/wp-content/plugins/maddog-bbs-slots/.*\.(sql|md|log|lock|json|ya?ml|dist|bak|swp|orig|rej)$ { deny all; }
 ```
 
 The plugin also checks itself. **Maddog BBS Slots → Dashboard** has an **Install health** panel, and an
@@ -377,9 +378,9 @@ The **Maddog BBS Slots** menu in wp-admin (administrators only):
   - **Reset all scores**, for a new season: every player keeps their name but goes back to the
     starting bankroll and spins with their stats cleared; their ranks and days played, the Hall of
     Fame, jackpot winners, monthly bests and the progressive are kept (type `SCORES`).
-  - **Reset the game to new**: every player, score, record, jackpot win, monthly best, news item and
-    the admin log are deleted and the progressive is reseeded. Settings, pages and WordPress accounts
-    are kept (type `NEW GAME`).
+  - **Reset the game to new**: every player, score, record, jackpot win, monthly best and news item
+    is deleted and the progressive is reseeded. Settings, pages, WordPress accounts and the admin log
+    are kept, so the audit trail survives the reset (type `NEW GAME`).
 - **Players:** every player with their score and spins; edit a score, spins left or days played
   (an edit can raise a rank but never lower one), or **delete a
   player** who has left the game or asks for their data to be removed. Their row, monthly history and
@@ -389,7 +390,8 @@ The **Maddog BBS Slots** menu in wp-admin (administrators only):
   were), and copy-ready cron commands.
 
 Every admin action posts to `admin-post.php` with a nonce and a capability check, and is recorded in
-the admin log shown on the Dashboard. The disclaimer is shown at the foot of every admin screen.
+the admin log shown on the Dashboard. A player edit records the old and new values. The log keeps a
+year of entries; the daily job removes older ones. The disclaimer is shown at the foot of every admin screen.
 
 ### Scheduled maintenance (cron)
 
@@ -421,6 +423,10 @@ Maintenance screen prints these commands with your site's real URL and paths fil
 
 - **Updating:** replace the plugin folder with the new version. Database changes are applied
   automatically on the next page load.
+  The plugin is distributed from GitHub, not wordpress.org, and its header carries
+  `Update URI: https://github.com/md99999/maddog-bbs-slots`, so WordPress never offers a wordpress.org
+  plugin that happens to share the `maddog-bbs-slots` folder name as an "update" to it. Check the
+  SHA-256 published with each release before uploading a zip.
 - **Coming from WP BBS Slots** (1.6.0 and earlier): see the next section.
 
 - **Deactivating** stops the scheduled job but keeps all game data.
@@ -439,7 +445,8 @@ settings move across on their own:
    Leave the old plugin where it is for now.
 2. On activation, Maddog BBS Slots deactivates WP BBS Slots, renames its tables from `wp_wpbbs_*`
    to `wp_mdbbs_*` (a rename: every row stays), moves its options from `wpbbs_*` to `mdbbs_*`, and
-   swaps the daily job for the new one. The move is recorded in the admin log on the Dashboard. If a
+   swaps the daily job for the new one. The move runs only on activation, or when an administrator
+   next opens wp-admin, never from a visitor's page load. It is recorded in the admin log on the Dashboard. If a
    table or option already exists under the new name, nothing is overwritten: the old one is kept and
    the log says which. If a table cannot be renamed (a database user without the `ALTER` privilege,
    say), any renames already made are undone, nothing else is changed, the old plugin keeps running,
@@ -492,6 +499,7 @@ includes/class-mdbbs-health.php warns if the install came from a clone or a bran
 includes/class-mdbbs-migration.php moves the data of the old WP BBS Slots plugin across, once
 tools/build-zip.php           builds an installable zip with PHP alone (not shipped in releases)
 tools/build-logo.py           draws the ANSI-art logo in assets/img (not shipped in releases)
+tools/test-spin.php           tests that a spin saves completely or not at all, on a scratch MySQL database (not shipped)
 includes/services/            players, the machine (spins, scores, jackpot, bailout),
                               Hall of Fame records, daily maintenance
 includes/frontend/            shortcodes, form and AJAX handlers, UI helpers, page views

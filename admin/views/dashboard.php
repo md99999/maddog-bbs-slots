@@ -27,7 +27,7 @@ $locations = get_registered_nav_menus();
         <h3 style="margin-bottom:4px;color:<?php echo $issue['level'] === 'error' ? '#d63638' : '#996800'; ?>">
             <?php echo esc_html($issue['title']); ?>
         </h3>
-        <?php echo $issue['body']; ?>
+        <?php echo wp_kses_post($issue['body']); ?>
     <?php endforeach; endif; ?>
     <p class="description">Building an installable zip from the repository is covered in the plugin's
         <code>README.md</code>, under <em>Building a release zip</em>.</p>

@@ -89,9 +89,9 @@ $fields = [
     </form>
 
     <h3>Reset the game to new</h3>
-    <p>Deletes every player, score, Hall of Fame record, jackpot win, monthly best, Gazette item and the admin log, and sets the progressive
+    <p>Deletes every player, score, Hall of Fame record, jackpot win, monthly best and Gazette item, and sets the progressive
         back to <?php echo esc_html(MDBBS_Game::fmt($s['jackpot_seed'])); ?>: the game as it was the day it was installed. Players' WordPress
-        accounts are kept, and each will choose a player name again.</p>
+        accounts are kept, and each will choose a player name again. The admin log is kept, so the reset and everything before it stay on record.</p>
     <?php echo MDBBS_Admin::form_open('reset_all'); ?>
         <p><label><input type="checkbox" name="confirm_warning" value="1" required> I understand all game data will be permanently deleted.</label></p>
         <p><label>Type <code>NEW GAME</code> to confirm: <input type="text" name="confirm_text" class="regular-text" required autocomplete="off"></label></p>

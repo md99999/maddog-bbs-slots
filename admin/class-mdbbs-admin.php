@@ -238,16 +238,30 @@ class MDBBS_Admin {
         if (!$p) throw new MDBBS_Exception('Player not found.');
         $bankroll = max(0, min(MDBBS_Game::MAX_SCORE, (int) self::post('bankroll')));
         $days = max(0, min(100000, (int) self::post('days_played', (string) $p->days_played)));
+        $spins = max(0, min(1000, (int) self::post('spins_left')));
         // Ranks only go up: an edit can earn a higher one, never take one away.
         $level = max((int) $p->rank_level, MDBBS_Game::rank_for(max((int) $p->peak_bankroll, $bankroll), $days));
-        $wpdb->update(MDBBS_DB::t('players'), [
+        $saved = $wpdb->update(MDBBS_DB::t('players'), [
             'bankroll'    => $bankroll,
-            'spins_left'  => max(0, min(1000, (int) self::post('spins_left'))),
+            'spins_left'  => $spins,
             'days_played' => $days,
             'rank_level'  => $level,
         ], ['id' => $id]);
+        if ($saved === false) {
+            MDBBS_Log::admin('error', sprintf('Edit of player #%d could not be saved: %s', $id, $wpdb->last_error));
+            throw new MDBBS_Exception('The player could not be saved. Nothing was changed.');
+        }
         if ($level > (int) $p->rank_level) MDBBS_Records::rank_firsts($p, $level);
-        MDBBS_Log::admin('player', sprintf('Edited player #%d (%s).', $id, $p->player_name));
+        // Old and new values, so a changed leaderboard can be traced back to who changed what.
+        $changes = [];
+        foreach (['score' => [(int) $p->bankroll, $bankroll], 'spins left' => [(int) $p->spins_left, $spins],
+                  'days played' => [(int) $p->days_played, $days]] as $what => $pair) {
+            if ($pair[0] !== $pair[1]) $changes[] = sprintf('%s %s -> %s', $what, number_format($pair[0]), number_format($pair[1]));
+        }
+        if ($level !== (int) $p->rank_level) {
+            $changes[] = sprintf('rank %s -> %s', MDBBS_Game::rank_title($p->rank_level), MDBBS_Game::rank_title($level));
+        }
+        MDBBS_Log::admin('player', sprintf('Edited player #%d (%s): %s.', $id, $p->player_name, $changes ? implode('; ', $changes) : 'no change'));
         self::notice('success', sprintf('%s updated. Rank: %s.', $p->player_name, MDBBS_Game::rank_title($level)));
     }
 
@@ -295,13 +309,14 @@ class MDBBS_Admin {
     private static function do_reset_all() {
         global $wpdb;
         self::confirm('NEW GAME', 'Game reset');
-        foreach (['players', 'jackpots', 'records', 'monthly', 'news', 'admin_log'] as $table) {
+        // The admin log is kept: a reset must not erase the record of what was done before it.
+        foreach (['players', 'jackpots', 'records', 'monthly', 'news'] as $table) {
             $wpdb->query('DELETE FROM ' . MDBBS_DB::t($table));
         }
         MDBBS_Installer::seed_state();
         $wpdb->update(MDBBS_DB::t('state'), ['state_value' => MDBBS_Settings::get('jackpot_seed'), 'updated_at' => current_time('mysql')], ['state_key' => 'jackpot']);
         delete_option('mdbbs_last_daily');
-        MDBBS_Log::admin('reset', 'Game reset to new: all players, scores, records and news deleted.');
+        MDBBS_Log::admin('reset', 'Game reset to new: all players, scores, records and news deleted. The admin log was kept.');
         self::notice('success', 'The game has been reset to new. Every player will choose a player name again.');
     }
 

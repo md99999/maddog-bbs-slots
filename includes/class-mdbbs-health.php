@@ -234,7 +234,9 @@ class MDBBS_Health {
         }
         $url = plugins_url('.git/HEAD', MDBBS_PATH . self::SLUG . '.php');
         // Follow redirects, or a site that sends http to https would look safe when it is not.
-        $response = wp_remote_get($url, ['timeout' => 5, 'redirection' => 3, 'sslverify' => false]);
+        // The certificate is verified: a TLS failure lands in the "could not tell" branch below,
+        // rather than letting someone on the network path answer for the site and make it look safe.
+        $response = wp_remote_get($url, ['timeout' => 5, 'redirection' => 3]);
         if (is_wp_error($response)) {
             $result = null;
         } else {
@@ -260,7 +262,7 @@ class MDBBS_Health {
         foreach (self::issues() as $issue) {
             printf('<div class="notice notice-%s"><p><strong>%s &mdash; %s</strong></p>%s</div>',
                 $issue['level'] === 'error' ? 'error' : 'warning',
-                esc_html(MDBBS_GAME_NAME), esc_html($issue['title']), $issue['body']);
+                esc_html(MDBBS_GAME_NAME), esc_html($issue['title']), wp_kses_post($issue['body']));
         }
     }
 }

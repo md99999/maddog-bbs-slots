@@ -70,6 +70,9 @@ class MDBBS_Maintenance {
     const LOG_OPTION = 'mdbbs_daily_log';
     const LOG_DAYS = 10;
 
+    /** Days of admin log the daily job keeps. */
+    const ADMIN_LOG_DAYS = 365;
+
     /**
      * Gives every player the day's spins, tops every bankroll under the daily floor up to it and
      * purges old news.
@@ -141,6 +144,9 @@ class MDBBS_Maintenance {
         }
         $cutoff = wp_date('Y-m-d H:i:s', time() - MDBBS_Settings::get('news_retention_days') * DAY_IN_SECONDS);
         $purged = (int) $wpdb->query($wpdb->prepare('DELETE FROM ' . MDBBS_DB::t('news') . ' WHERE created_at < %s', $cutoff));
+        // The admin log keeps a year: long enough to trace any change, without growing for ever.
+        $log_cutoff = wp_date('Y-m-d H:i:s', time() - self::ADMIN_LOG_DAYS * DAY_IN_SECONDS);
+        $wpdb->query($wpdb->prepare('DELETE FROM ' . MDBBS_DB::t('admin_log') . ' WHERE created_at < %s', $log_cutoff));
         update_option('mdbbs_last_daily', current_time('mysql'), false);
         $players = (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . MDBBS_DB::t('players'));
         $below = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . MDBBS_DB::t('players') . ' WHERE bankroll < %d', $floor));
