@@ -45,6 +45,11 @@ class MDBBS_Actions {
             }
         } catch (MDBBS_Exception $e) {
             MDBBS_UI::flash($e->type, $e->getMessage());
+        } catch (Throwable $e) {
+            // Anything unexpected: logged for the admin, and a plain message for the player instead of
+            // a fatal-error page (which, with WP_DEBUG_DISPLAY on, would show file paths).
+            self::log_unexpected($action, $e);
+            MDBBS_UI::flash('error', 'Something went wrong. Please try again.');
         }
         wp_safe_redirect($redirect);
         exit;
@@ -60,7 +65,11 @@ class MDBBS_Actions {
             $p = MDBBS_Player::current();
             if (!$p) throw new MDBBS_Exception('Choose a player name first.');
             wp_send_json_success(MDBBS_Slots::spin($p, self::bet()));
-        } catch (MDBBS_Exception $e) {
+        } catch (Throwable $e) {
+            if (!$e instanceof MDBBS_Exception) {
+                self::log_unexpected('ajax_spin', $e);
+                $e = new MDBBS_Exception('Something went wrong. Please try again.');
+            }
             $p = MDBBS_Player::current() ? MDBBS_Player::fresh(MDBBS_Player::current()->id) : null;
             wp_send_json_error([
                 'message'    => $e->getMessage(),
@@ -68,6 +77,15 @@ class MDBBS_Actions {
                 'spins_left' => $p ? (int) $p->spins_left : 0,
                 'next_bet'   => $p ? MDBBS_Player::default_bet($p) : MDBBS_Game::min_bet(),
             ]);
+        }
+    }
+
+    /** Records an unexpected error in the admin log; never lets the logging itself break the response. */
+    private static function log_unexpected($where, Throwable $e) {
+        try {
+            MDBBS_Log::admin('error', sprintf('%s during %s: %s', get_class($e), sanitize_key($where), $e->getMessage()));
+        } catch (Throwable $ignored) {
+            error_log('[' . MDBBS_GAME_NAME . '] ' . get_class($e) . ' during ' . sanitize_key($where) . ': ' . $e->getMessage());
         }
     }
 

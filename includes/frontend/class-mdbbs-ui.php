@@ -134,7 +134,7 @@ class MDBBS_UI {
         $items = [
             'Player' => esc_html($p->player_name),
             'Rank'   => esc_html(MDBBS_Game::player_rank($p)),
-            'Score'  => '<span data-mdbbs="bankroll">' . MDBBS_Game::fmt($p->bankroll) . '</span>',
+            'Score'  => '<span data-mdbbs="bankroll">' . esc_html(MDBBS_Game::fmt($p->bankroll)) . '</span>',
             'Spins left' => '<span data-mdbbs="spins">' . (int) $p->spins_left . '</span>',
         ];
         $html = '<div class="mdbbs-status">';

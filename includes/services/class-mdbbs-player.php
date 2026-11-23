@@ -10,7 +10,7 @@ class MDBBS_Player {
     const NAME_MAX = 20;
 
     /** Player names nobody may take (compared without spaces or punctuation, ignoring case). */
-    const RESERVED = ['admin', 'administrator', 'sysop', 'moderator', 'webmaster', 'root', 'system', 'staff',
+    const RESERVED = ['admin', 'administrator', 'sysop', 'sysadmin', 'moderator', 'webmaster', 'root', 'system', 'staff',
                       'support', 'house', 'thehouse', 'dealer', 'wpbbsslots', 'maddogbbsslots', 'aformerplayer', 'nobody', 'anonymous'];
 
     private static $current = false;
@@ -130,16 +130,30 @@ class MDBBS_Player {
         if (!preg_match('/^[A-Za-z0-9](?:[A-Za-z0-9 ._\-]*[A-Za-z0-9])?$/', $name)) {
             throw new MDBBS_Exception('Use letters, numbers, spaces, dots, dashes and underscores only, starting and ending with a letter or number.');
         }
-        // Names that could pass for the site's staff or the game itself.
-        $bare = strtolower(preg_replace('/[^a-z0-9]/i', '', $name));
-        $staff = ['admin', 'sysop', 'moderator', 'webmaster'];
+        // Names that could pass for the site's staff or the game itself, including look-alikes such as
+        // "Sys0p", "Adm1n", "Admln" or "Webrnaster": both sides are folded the same way before comparing.
+        $bare = self::fold($name);
+        // "TheAdmin", "RealSysop", "OfficialModerator" and so on: the staff words count after these too.
+        $unprefixed = self::fold(preg_replace('/^(?:the|real|official|site|head|chief|super|true)/', '', strtolower(preg_replace('/[^a-z0-9]/i', '', $name))));
+        $staff = ['admin', 'sysop', 'sysadmin', 'moderator', 'webmaster'];
         foreach (self::RESERVED as $word) {
-            $starts = in_array($word, $staff, true) && strpos($bare, $word) === 0;
-            if ($bare === $word || $starts) {
+            $folded = self::fold($word);
+            $starts = in_array($word, $staff, true) && (strpos($bare, $folded) === 0 || strpos($unprefixed, $folded) === 0);
+            if ($bare === $folded || $starts) {
                 throw new MDBBS_Exception('That player name is reserved. Please choose another.');
             }
         }
         return $name;
+    }
+
+    /**
+     * A name reduced for look-alike comparison: lower case, letters and digits only, digits read as the
+     * letters they resemble, and l, rn and vv read as i, m and w. Used only to compare, never shown.
+     */
+    private static function fold($name) {
+        $bare = strtolower(preg_replace('/[^a-z0-9]/i', '', (string) $name));
+        $bare = strtr($bare, ['0' => 'o', '1' => 'i', '3' => 'e', '4' => 'a', '5' => 's', '6' => 'g', '7' => 't', '8' => 'b', '9' => 'g', 'l' => 'i']);
+        return str_replace(['rn', 'vv'], ['m', 'w'], $bare);
     }
 
     public static function create($user_id, $name) {

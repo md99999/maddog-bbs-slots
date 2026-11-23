@@ -48,15 +48,47 @@ class MDBBS_Slots {
 
     /**
      * Spins the reels for $p at $bet and settles the result.
+     *
+     * The whole spin (wager, progressive, jackpot, payout, records, Gazette, bailout) is one database
+     * transaction: it is saved completely or not at all. A failure part-way, whether a database error
+     * or anything unexpected, rolls every step back, so a player is never charged for a spin that was
+     * not paid out and a jackpot is never reset without being paid. (On a table engine without
+     * transactions, such as MyISAM, the statements simply run one by one as before.)
+     *
      * @return array the outcome, as sent to the browser
      */
     public static function spin($p, $bet) {
         global $wpdb;
-        $t = MDBBS_DB::t('players');
         $bet = (int) $bet;
         if (!in_array($bet, MDBBS_Game::BETS, true)) throw new MDBBS_Exception('Choose a wager from the list.');
+        $id = (int) $p->id;
 
-        $p = MDBBS_Player::fresh($p->id);
+        if ($wpdb->query('START TRANSACTION') === false) {
+            throw new MDBBS_Exception('The machine is not available just now. Nothing was charged; please try again.');
+        }
+        try {
+            $outcome = self::play($id, $bet);
+            if ($wpdb->query('COMMIT') === false) throw new RuntimeException('COMMIT failed: ' . $wpdb->last_error);
+            return $outcome;
+        } catch (Throwable $e) {
+            $wpdb->query('ROLLBACK');
+            // A refusal meant for the player (no spins left, wager too high) passes through as it is.
+            if ($e instanceof MDBBS_Exception) throw $e;
+            // Anything else is logged for the admin, after the rollback so the entry is kept, and the
+            // player gets a plain message with no internals in it.
+            MDBBS_Log::admin('error', sprintf('Spin for player #%d was rolled back (%s): %s', $id, get_class($e), $e->getMessage()));
+            throw new MDBBS_Exception('That spin could not be completed, so nothing was charged. Please try again.');
+        }
+    }
+
+    /**
+     * The steps of one spin, run inside spin()'s transaction. Every database failure throws, so
+     * spin() can roll the lot back.
+     */
+    private static function play($id, $bet) {
+        global $wpdb;
+        $t = MDBBS_DB::t('players');
+        $p = MDBBS_Player::fresh($id);
         if (!$p) throw new MDBBS_Exception('Player not found.');
         if ((int) $p->spins_left <= 0) throw new MDBBS_Exception('You have no spins left today. Your spins come back tomorrow.', 'warning');
         if ((int) $p->bankroll < MDBBS_Game::min_bet()) throw new MDBBS_Exception('You are out of credits until tomorrow\'s top-up.', 'warning');
@@ -72,11 +104,13 @@ class MDBBS_Slots {
         // The first spin of the day goes in the Gazette, with what the player sat down with.
         self::announce_start($p);
 
-        // Every spin feeds the progressive.
-        $wpdb->query($wpdb->prepare(
+        // Every spin feeds the progressive. This also locks the jackpot row until the spin is saved, so
+        // spins that could win it take turns and claim_jackpot() always sees the true pot.
+        $fed = $wpdb->query($wpdb->prepare(
             'UPDATE ' . MDBBS_DB::t('state') . ' SET state_value = state_value + %d, updated_at = %s WHERE state_key = %s',
             MDBBS_Settings::get('jackpot_increment'), current_time('mysql'), 'jackpot'
         ));
+        if ($fed === false) throw new RuntimeException('Progressive not updated: ' . $wpdb->last_error);
 
         $reels = [self::roll(), self::roll(), self::roll()];
         $result = self::evaluate($reels);
@@ -99,15 +133,12 @@ class MDBBS_Slots {
             $win, MDBBS_Game::MAX_SCORE, $bonus, $bet, $win, $won ? 1 : 0, $win, $win, $won ? 1 : 0,
             $result['kind'] === 'jackpot' ? 1 : 0, $now, $p->id
         ));
-        if ($settled === false) {
-            // Never leave a player charged for a spin that was not paid out: hand back the wager and the spin.
-            $wpdb->query($wpdb->prepare("UPDATE $t SET bankroll = LEAST(bankroll + %d, %d), spins_left = spins_left + 1 WHERE id = %d",
-                $bet, MDBBS_Game::MAX_SCORE, $p->id));
-            MDBBS_Log::admin('error', sprintf('Spin for player #%d could not be saved: %s', $p->id, $wpdb->last_error));
-            throw new MDBBS_Exception('That spin could not be saved, so your wager and spin have been returned. Please try again.');
-        }
+        // Never leave a player charged for a spin that was not paid out: spin() rolls the wager, the
+        // progressive and any jackpot claim back together.
+        if ($settled === false) throw new RuntimeException('Payout not saved: ' . $wpdb->last_error);
 
         $p = MDBBS_Player::fresh($p->id);
+        if (!$p) throw new RuntimeException('Player row missing after the payout: ' . $wpdb->last_error);
         $news = self::record_spin($p, $reels, $result, $bet, $win);
 
         if ($won) {
@@ -146,21 +177,30 @@ class MDBBS_Slots {
     }
 
     /**
-     * Awards the progressive and resets it to its starting value. Compare-and-swap, so two
-     * winners at the same moment cannot both collect the same pot.
+     * Awards the progressive and resets it to its starting value. Runs inside spin()'s transaction,
+     * which already holds the jackpot row's lock (taken when this spin fed the progressive), so no
+     * other spin can read or claim the same pot until this one is saved or rolled back. Throws if
+     * the pot cannot be read or reset, rather than paying out an amount that was never in the pot.
      */
     private static function claim_jackpot() {
         global $wpdb;
-        $seed = MDBBS_Settings::get('jackpot_seed');
-        for ($i = 0; $i < 10; $i++) {
-            $amount = MDBBS_Game::jackpot();
-            $done = $wpdb->query($wpdb->prepare(
-                'UPDATE ' . MDBBS_DB::t('state') . ' SET state_value = %d, updated_at = %s WHERE state_key = %s AND state_value = %d',
-                $seed, current_time('mysql'), 'jackpot', $amount
-            ));
-            if ($done) return $amount;
+        $table = MDBBS_DB::t('state');
+        $read = function () use ($wpdb, $table) {
+            return $wpdb->get_var($wpdb->prepare("SELECT state_value FROM $table WHERE state_key = %s", 'jackpot'));
+        };
+        $amount = $read();
+        if ($amount === null) {
+            // No jackpot row (an interrupted install): create it at the seed, then read it back.
+            MDBBS_Installer::seed_state();
+            $amount = $read();
         }
-        return $seed;
+        if ($amount === null) throw new RuntimeException('Jackpot not readable: ' . $wpdb->last_error);
+        $reset = $wpdb->query($wpdb->prepare(
+            "UPDATE $table SET state_value = %d, updated_at = %s WHERE state_key = %s",
+            MDBBS_Settings::get('jackpot_seed'), current_time('mysql'), 'jackpot'
+        ));
+        if ($reset === false) throw new RuntimeException('Jackpot not reset: ' . $wpdb->last_error);
+        return (int) $amount;
     }
 
     /**

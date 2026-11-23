@@ -10,6 +10,8 @@ $php_bin = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
 $daily_php = MDBBS_PATH . 'maintenance/daily_maintenance.php';
 $wp_cron_off = defined('DISABLE_WP_CRON') && DISABLE_WP_CRON;
 $floor = MDBBS_Game::fmt(MDBBS_Settings::get('daily_floor'));
+// Quoted for the shell, so a path or URL with a space or a shell character pastes into a cron job intact.
+$q_cron_url = escapeshellarg($cron_url);
 
 /** A read-only field that selects itself when clicked, so the command is easy to copy. */
 $cmd = function ($command) {
@@ -70,15 +72,15 @@ $cmd = function ($command) {
     <h3>Recommended: trigger WordPress's scheduler every 5 minutes</h3>
     <p>In cPanel open <strong>Advanced &rarr; Cron Jobs</strong>, choose <strong>Once Per Five Minutes</strong> and paste this into
         <strong>Command</strong> (click the box to select it):</p>
-    <?php $cmd('curl -s ' . $cron_url . ' > /dev/null 2>&1'); ?>
+    <?php $cmd('curl -s ' . $q_cron_url . ' > /dev/null 2>&1'); ?>
     <p class="description">If the host has no <code>curl</code>, use <code>wget</code>:</p>
-    <?php $cmd('wget -q -O - ' . $cron_url . ' > /dev/null 2>&1'); ?>
+    <?php $cmd('wget -q -O - ' . $q_cron_url . ' > /dev/null 2>&1'); ?>
     <p class="description">Editing a crontab by hand? Paste the whole line:</p>
-    <?php $cmd('*/5 * * * * curl -s ' . $cron_url . ' > /dev/null 2>&1'); ?>
+    <?php $cmd('*/5 * * * * curl -s ' . $q_cron_url . ' > /dev/null 2>&1'); ?>
 
     <h3>Alternative: run the game's daily job directly</h3>
     <p>Run this once a day at your site's midnight (cPanel: <em>Once Per Day</em>, then set the hour):</p>
-    <?php $cmd($php_bin . ' ' . $daily_php . ' --wp-path=' . untrailingslashit(ABSPATH)); ?>
+    <?php $cmd(escapeshellarg($php_bin) . ' ' . escapeshellarg($daily_php) . ' ' . escapeshellarg('--wp-path=' . untrailingslashit(ABSPATH))); ?>
     <p class="description">Cron follows the <em>server's</em> clock, often UTC, while the game uses the timezone in Settings &rarr; General
         (currently <code><?php echo esc_html(wp_timezone_string()); ?></code>, where it is now <?php echo esc_html(current_time('H:i')); ?>).
         Choose the hour that matches your local midnight.</p>

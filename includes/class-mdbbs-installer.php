@@ -29,11 +29,25 @@ class MDBBS_Installer {
         MDBBS_Maintenance::unschedule();
     }
 
+    /**
+     * Schema updates after the plugin's files are replaced, on any request (plugins_loaded).
+     *
+     * Moving WP BBS Slots' data is left out of this on purpose: it renames tables and deactivates a
+     * plugin, so it runs only on activation or for an administrator in wp-admin (admin_upgrade()),
+     * never from a visitor's page load. Until it has run the tables are left alone, or empty ones
+     * would be created under the new names beside the old ones.
+     */
     public static function maybe_upgrade() {
-        // Another page load is moving the old plugin's data right now; leave the tables to it.
-        if (!MDBBS_Migration::maybe_run()) return;
+        if (MDBBS_Migration::needed()) return;
         $from = get_option('mdbbs_db_version');
         if ($from !== MDBBS_DB_VERSION) self::upgrade_from($from);
+    }
+
+    /** admin_init: an administrator's wp-admin visit finishes a move from WP BBS Slots that activation did not. */
+    public static function admin_upgrade() {
+        if (!MDBBS_Migration::needed() || !current_user_can('activate_plugins')) return;
+        // false while another request holds the move's lock, or when it failed (the Install health notice says why).
+        if (MDBBS_Migration::maybe_run()) self::maybe_upgrade();
     }
 
     /** Brings the tables up to date from schema version $from (false on a new install). */
